@@ -8,12 +8,18 @@ terraform {
   }
 }
 
+# variable "region" {
+#  type = "string"  
+#  nullable = false
+# }
+
 provider "tencentcloud" {
   region = "ap-guangzhou"
-
+  
   # secret from env
   # export TENCENTCLOUD_SECRET_ID=my-secret-id
   # export TENCENTCLOUD_SECRET_KEY=my-secret-key
   # secret_id = "my-secret-id"
   # secret_key = "my-secret-key"
 }
+
