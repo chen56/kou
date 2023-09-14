@@ -1,31 +1,17 @@
 resource "tencentcloud_vpc" "main" {
-  name         = "miao.vpc.main"
+  name         = "kou.vpc.main"
   cidr_block   = "10.10.0.0/16"
   is_multicast = true
 
   tags = {
-    "miao.workspace" = "workspace_ai"
+    "kou.workspace" = "workspace_ai"
   }
 }
-
 # vpc  have a default tencentcloud_route_table , so , dont create it
 
-resource "tencentcloud_subnet" "sub" {
+resource "tencentcloud_subnet" "zone_7" {
   vpc_id            = tencentcloud_vpc.main.id
-  name              = "tf-as-subnet"
-  cidr_block        = "10.10.30.0/24"
-  availability_zone = "ap-guangzhou-3"
-}
-resource "tencentcloud_subnet" "sub2" {
-  vpc_id            = tencentcloud_vpc.main.id
-  name              = "tf-as-subnet"
-  cidr_block        = "10.10.31.0/24"
-  availability_zone = "ap-guangzhou-3"
-}
-
-resource "tencentcloud_subnet" "sub7" {
-  vpc_id            = tencentcloud_vpc.main.id
-  name              = "tf-as-subnet"
+  name              = "kou.subnet.zone_7"
   cidr_block        = "10.10.70.0/24"
   availability_zone = "ap-guangzhou-7"
 }
@@ -86,7 +72,7 @@ data "tencentcloud_instance_types" "my_favorite_instance_types" {
 // Create a POSTPAID_BY_HOUR CVM instance
 resource "tencentcloud_instance" "cvm_postpaid" {
   instance_name     = "cvm_postpaid"
-  availability_zone = "ap-guangzhou-3"
+  availability_zone = "ap-guangzhou-7"
   image_id          = data.tencentcloud_images.my_favorite_image.images.0.image_id
   instance_type     = data.tencentcloud_instance_types.my_favorite_instance_types.instance_types.0.instance_type
 
@@ -97,7 +83,7 @@ resource "tencentcloud_instance" "cvm_postpaid" {
   hostname          = "user"
   project_id        = 0
   vpc_id            = tencentcloud_vpc.main.id
-  subnet_id         = tencentcloud_subnet.sub.id
+  subnet_id         = tencentcloud_subnet.zone_7.id
 
   tags = {
     tagKey = "tagValue"

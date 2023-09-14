@@ -1,7 +1,9 @@
 terraform {
   required_providers {
+
     tencentcloud = {
-      source = "tencentcloudstack/tencentcloud"
+
+       source = "tencentcloudstack/tencentcloud"
       # 通过version指定版本
       # version = ">=1.60.18"
     }
@@ -15,6 +17,7 @@ terraform {
 # }
 
 provider "tencentcloud" {
+  domain = ""
   region = "ap-guangzhou"
   
   # secret from env

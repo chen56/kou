@@ -1,0 +1,15 @@
+# https://developer.hashicorp.com/terraform/cli/config/config-file#locations
+# use TF_CLI_CONFIG_FILE set this config path
+disable_checkpoint = true
+
+provider_installation {
+  network_mirror {
+    url = "https://mirrors.tencent.com/terraform/"
+    // 限制只有腾讯云相关Provider, 从url中指定镜像源下载
+    include = ["registry.terraform.io/tencentcloudstack/*"]
+  }
+  direct {
+    // 声明除了腾讯云相关Provider, 其它Provider依然从默认官方源下载
+    exclude = ["registry.terraform.io/tencentcloudstack/*"]
+  }
+}
