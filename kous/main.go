@@ -11,17 +11,18 @@ import (
 	"github.com/hashicorp/terraform-exec/tfexec"
 )
 
-var logger = log.New(os.Stdout, "", 0)
+var logger = log.New(os.Stdout, "", log.LstdFlags)
 
 func main() {
 	// 关键：要设置mirror
-	check.Check(os.Setenv("TF_CLI_CONFIG_FILE", "./tencent.tfrc"))
-
-	execPath := check.Check1(exec.LookPath("terraform"))
+	check.Ok(os.Setenv("TF_CLI_CONFIG_FILE", "./tencent.tfrc"))
+	execPath := check.Ok2(exec.LookPath("terraform"))
 
 	workingDir := "./"
 	tf, err := tfexec.NewTerraform(workingDir, execPath)
 	tf.SetLogger(logger)
+	tf.SetStdout(os.Stdout)
+	tf.SetStderr(os.Stderr)
 	if err != nil {
 		log.Fatalf("error running NewTerraform: %s", err)
 	}
@@ -37,4 +38,6 @@ func main() {
 	}
 
 	fmt.Println(state.FormatVersion) // "0.1"
+
+	check.Ok(tf.Apply(context.Background()))
 }

@@ -1,13 +1,21 @@
 package check
 
-func Check(err error) {
+import (
+	"fmt"
+	"reflect"
+)
+
+func Ok(err error) {
 	if err != nil {
-		panic(err)
+		panic(errorInfo(err))
 	}
 }
-func Check1[T any](value T, err error) T {
+func Ok2[T any](value T, err error) T {
 	if err != nil {
-		panic(err)
+		panic(errorInfo(err))
 	}
 	return value
+}
+func errorInfo(err error) string {
+	return fmt.Sprintf("check error[%s]:%s", reflect.TypeOf(err), err)
 }
