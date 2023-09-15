@@ -1,0 +1,3 @@
+# ui code need more length, reduce ui nest level
+[*.dart]
+max_line_length = 200
