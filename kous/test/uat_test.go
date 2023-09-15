@@ -7,7 +7,6 @@ import (
 	"github.com/hashicorp/hc-install/releases"
 	"github.com/hashicorp/terraform-exec/tfexec"
 	. "kous/check"
-	"kous/internal/_io"
 	"log"
 	"os"
 	"os/exec"
@@ -25,12 +24,12 @@ func TestHello(t *testing.T) {
 	is.Equal(1, 1)
 	///var/folders/d2/h5tnv_sx08g6s7jy3kcww5dm0000gp/T/terraform_1.0.6_darwin_amd64.zip4183135400
 	///var/folders/d2/h5tnv_sx08g6s7jy3kcww5dm0000gp/T/terraform_4128723855
-	fmt.Println("pwd:", Ok2(os.Getwd()))
+	fmt.Println("pwd:", AA(os.Getwd()))
 	cmd := exec.Command("terraform", "-h")
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
-	Ok(cmd.Run())
+	A(cmd.Run())
 }
 func TestHelloSss(t *testing.T) {
 	var is = assert.New(t)
@@ -75,10 +74,5 @@ func TestTerraformExec2(t *testing.T) {
 	cmd := exec.Command(c, "init")
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-
-	Ok(cmd.Run())
-
-}
-func TestInstall(t *testing.T) {
-	_io.CopyFile("/Users/chen/Downloads/terraform3", "/Users/chen/Downloads/terraform5")
+	A(cmd.Run())
 }

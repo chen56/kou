@@ -15,8 +15,8 @@ var logger = log.New(os.Stdout, "", log.LstdFlags)
 
 func main() {
 	// 关键：要设置mirror
-	check.Ok(os.Setenv("TF_CLI_CONFIG_FILE", "./tencent.tfrc"))
-	execPath := check.Ok2(exec.LookPath("terraform"))
+	check.A(os.Setenv("TF_CLI_CONFIG_FILE", "./tencent.tfrc"))
+	execPath := check.AA(exec.LookPath("terraform"))
 
 	workingDir := "./"
 	tf, err := tfexec.NewTerraform(workingDir, execPath)
@@ -39,5 +39,5 @@ func main() {
 
 	fmt.Println(state.FormatVersion) // "0.1"
 
-	check.Ok(tf.Apply(context.Background()))
+	check.A(tf.Apply(context.Background()))
 }
