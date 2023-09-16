@@ -42,18 +42,47 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
+    // 更好的代码排版，类似html , 把属性和子元素分开
+    // Scaffold(
+    //   appBar: AppBar(backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+    //       title: Text(widget.title)
+    //   ),
+    //   body: Center( widthFactor:1,heightFactor:1,
+    //     child: Column( mainAxisAlignment: MainAxisAlignment.center,
+    //       children: <Widget>[
+    //         const Text('You have pushed the button this many times:'),
+    //         Text('$_counter', style: Theme.of(context).textTheme.headlineMedium),
+    //       ],
+    //     ),
+    //   ),
+    //   floatingActionButton: FloatingActionButton(onPressed: _incrementCounter, tooltip: 'Increment',
+    //       child: const Icon(Icons.add),
+    //   ),
+    // );
     return Scaffold(
-      appBar: AppBar(backgroundColor: Theme.of(context).colorScheme.inversePrimary, title: Text(widget.title)),
+      appBar: AppBar(
+        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+        title: Text(widget.title),
+      ),
       body: Center(
+        widthFactor: 1,
+        heightFactor: 1,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
             const Text('You have pushed the button this many times:'),
-            Text('$_counter', style: Theme.of(context).textTheme.headlineMedium),
+            Text(
+              '$_counter',
+              style: Theme.of(context).textTheme.headlineMedium,
+            ),
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(onPressed: _incrementCounter, tooltip: 'Increment', child: const Icon(Icons.add)),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _incrementCounter,
+        tooltip: 'Increment',
+        child: const Icon(Icons.add),
+      ),
     );
   }
 }
