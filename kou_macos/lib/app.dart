@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 
 class MyApp extends StatelessWidget {
@@ -40,36 +39,13 @@ class _AppState extends State<App> {
   @override
   Widget build(BuildContext context) {
     Widget link(String title, IconData icon) {
-      return ListTile( title: Text(title), selected: false, onTap: () => {});
+      return MaterialButton(
+          minWidth: double.infinity, // fill drawer space
+          height: 46,
+          onPressed: () {},
+          // children...
+          child: Align(alignment: Alignment.centerLeft, child: Text(title)));
     }
-    // Widget headLink(String title, IconData icon) {
-    //   var link2 = TextButton(
-    //     style: ButtonStyle(
-    //         padding:
-    //         MaterialStateProperty.all<EdgeInsets>(const EdgeInsets.all(2))),
-    //     child: Row(
-    //       crossAxisAlignment: CrossAxisAlignment.center,
-    //       children: [
-    //         // const Icon(
-    //         //   Icons.arrow_right,
-    //         // ),
-    //         // title 被Flexible包裹后，文本太长会自动换行▽
-    //         // 换行后左边图标需要CrossAxisAlignment.start 排在文本的第一行
-    //         //📜📁📂📄🗓📜 ▸▾▹▿▶︎▷▼▽►🔘◽️▫️◻️◼️⬛️🔹⚉
-    //         Flexible(child: Text("◻ ${node.title}")),
-    //       ],
-    //     ),
-    //     onPressed: () {
-    //
-    //     },
-    //   );
-    //   // TextButton link = TextButton(onPressed: (){}, child: Text(node.title));
-    //   return Padding(
-    //     // 缩进模仿树形
-    //     padding: EdgeInsets.only(left: 20 * (node.level - 1).toDouble()),
-    //     child: link2,
-    //   );
-    // }
 
     var content = Center(
       child: Column(
@@ -88,12 +64,15 @@ class _AppState extends State<App> {
       body: Row(
         children: [
           Drawer(
-            width: 200,
+            width: 260,
             child: Column(
               children: [
+                link("︎︎︎▶ dashboard", Icons.abc),
                 link("︎︎︎▶ 腾讯云", Icons.abc),
-                link("  ︎︎︎▶ 广州", Icons.abc),
-                const Spacer(),
+                link("  ︎︎︎▶ 香港", Icons.abc),
+                link("  ︎︎︎  ■ df webui", Icons.abc),
+                link("  ︎︎︎  ■ out service", Icons.abc),
+                  const Spacer(),
               ],
             ),
           ),

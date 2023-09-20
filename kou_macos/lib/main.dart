@@ -9,7 +9,7 @@ import 'package:window_size/window_size.dart' as window_size;
 void main() {
   void initWindow() {
     if (!kIsWeb && (Platform.isWindows || Platform.isLinux || Platform.isMacOS)) {
-      final double windowWidth = WindowClass.l.widthFrom;
+      final double windowWidth = WindowClass.xl.widthFrom;
       const double windowHeight = 800;
 
       WidgetsFlutterBinding.ensureInitialized();
