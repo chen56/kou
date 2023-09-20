@@ -1,6 +1,6 @@
-# kouc
+# kou_macos
 
-kou-client
+kou  cloud app manager
 
 ## Getting Started
 
