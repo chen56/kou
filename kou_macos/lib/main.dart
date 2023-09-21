@@ -9,7 +9,7 @@ import 'package:window_size/window_size.dart' as window_size;
 void main() {
   void initWindow() {
     if (!kIsWeb && (Platform.isWindows || Platform.isLinux || Platform.isMacOS)) {
-      final double windowWidth = WindowClass.xl.widthFrom;
+      final double windowWidth = WindowClass.m.widthFrom;
       const double windowHeight = 800;
 
       WidgetsFlutterBinding.ensureInitialized();
@@ -18,7 +18,7 @@ void main() {
       window_size.getCurrentScreen().then((screen) {
         window_size.setWindowFrame(Rect.fromCenter(
           center: screen!.frame.center,
-          width: windowWidth,
+          width: WindowClass.xl.widthFrom,
           height: windowHeight,
         ));
       });
