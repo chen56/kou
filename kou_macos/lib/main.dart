@@ -26,5 +26,5 @@ void main() {
   }
 
   initWindow();
-  runApp(const MyApp());
+  runApp(MyApp());
 }

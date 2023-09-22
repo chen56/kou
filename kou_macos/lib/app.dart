@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:kou_macos/src/common/router.dart';
+import 'package:kou_macos/src/routes.dart';
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  MyApp({super.key});
+
+  final KRoute routeRoot = createRootRoute();
 
   // This widget is the root of your application.
   @override
@@ -15,6 +19,9 @@ class MyApp extends StatelessWidget {
 
       home: const App(title: 'kou cloud app manage'),
     );
+    // return MaterialApp.router(
+    //   routerConfig: _router,
+    // );
   }
 }
 

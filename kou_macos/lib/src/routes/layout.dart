@@ -3,6 +3,9 @@
 import 'package:flutter/material.dart';
 import 'package:kou_macos/src/common/router.dart';
 
+LayoutMixin layout(BuildContext context){
+    return const Layout();
+}
 class Layout extends StatelessWidget with LayoutMixin{
   const Layout({super.key});
 
