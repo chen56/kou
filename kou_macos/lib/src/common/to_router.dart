@@ -3,23 +3,98 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:kou_macos/src/common/log.dart';
+import "package:path/path.dart" as path_;
 
 mixin LayoutMixin on Widget {}
 
-mixin RoutePageMixin on Widget {}
-
 typedef LayoutBuilder = LayoutMixin Function(BuildContext context);
 
-class RouteState {}
+mixin RoutePageMixin on Widget {}
 
 typedef PageBuilder = Widget Function(BuildContext context, RouteState state);
 
-class ToConfig{
+class RouteState {}
+
+class ToRouter {
   To root;
-  ToConfig({required this.root});
+
+  ToRouter({required this.root});
+
+// To match(Uri uri) {
+//   if (uri.path == "/") return root;
+//   To current = root;
+//   if (current.children.length == 1 && current.children.first.pathSegemntType == PathSegment.dynamic)
+//     for (var s in uri.pathSegments) {
+//       testFunction([1, 2]);
+//     }
+// }
 }
 
-/// Go == Route , Route名字被系统包占用，用Go替代
+enum PathSegmentType {
+  /// 正常路径片段: /settings
+  normal,
+
+  /// 动态参数  /user/[id]  :
+  ///     /user/1 -> id==1
+  dynamic,
+
+  /// 动态参数  /file/[...path]  :
+  ///     /file/a.txt  ->  path==a.txt
+  ///     /file/a/b/c.txt -> path==a/b/c.txt
+  dynamicAll;
+
+  static PathSegmentType parse(String name) {
+    return PathSegmentType.normal;
+  }
+}
+
+class ToPathSegment {
+  final String name;
+  final PathSegmentType type;
+
+  ToPathSegment({required this.name, required this.type});
+
+  static ToPathSegment parse(String name) {
+    assert(name.isNotEmpty);
+
+    if (name[0] != "[" || name[name.length - 1] != "]") {
+      return ToPathSegment(name: name, type: PathSegmentType.normal);
+    }
+
+    // name 现在是[...xxx]或[xx]
+    assert(name!="[]");
+    assert(name!="[...]");
+
+    final removeBrackets = name.substring(1, name.length - 1);
+
+    if (removeBrackets.startsWith("...")) {
+      return ToPathSegment(name: removeBrackets.substring(3), type: PathSegmentType.dynamicAll);
+    } else {
+      return ToPathSegment(name: removeBrackets, type: PathSegmentType.dynamic);
+    }
+  }
+
+  @override
+  bool operator ==(Object other) =>other is ToPathSegment && other.runtimeType == runtimeType && other.name == name && other.type == type;
+
+  @override
+  int get hashCode => Object.hash(name, type);
+
+  String toSegmentString() {
+    return switch (type) {
+      PathSegmentType.dynamic => "[$name]",
+      PathSegmentType.dynamicAll => "[...$name]",
+      _ => name,
+    };
+  }
+
+  @override
+  String toString() {
+    return toSegmentString();
+  }
+}
+
+/// To == go_router.GoRoute
 /// 官方的go_router内部略显复杂，且没有我们想要的layout等功能，所以自定一个简化版的to_router
 class To {
   To({
@@ -27,29 +102,25 @@ class To {
     this.layout,
     this.page,
     this.children = const [],
-  }) {
+  })  : assert(children.isNotEmpty || page != null),
+        assert(name == "/" || !name.contains("/")),
+        pathSegemntType = PathSegmentType.parse(name) {
     for (var route in children) {
       route.parent = this;
     }
   }
 
   final String name;
+  final PathSegmentType pathSegemntType;
+
   late final To? parent;
   final LayoutBuilder? layout;
   final PageBuilder? page;
   List<To> children;
 
-  To children2(List<To> children) {
-    return To(name: name, layout: layout, page: page, children: children);
-  }
+  bool get isRoot => parent == null;
 
-  To child2(To go) {
-    return To(name: name, layout: layout, page: page, children: children);
-  }
-
-  To call(List<To> children) {
-    return To(name: name, layout: layout, page: page, children: children);
-  }
+  String get path => isRoot ? "/" : path_.join(parent!.path, name);
 
   List<To> toList({
     bool includeThis = true,
@@ -123,15 +194,15 @@ class ToNavigator extends StatelessWidget {
           return true;
         }
         var page = _pages.removeLast();
-        //把completer的完成指责放权给各Screen自己后，
-        //如果由系统back button触发onPopPage，框架应使completer完成，要不会泄露Future
+//把completer的完成指责放权给各Screen自己后，
+//如果由系统back button触发onPopPage，框架应使completer完成，要不会泄露Future
         if (!page.completer.isCompleted) {
           page.completer.complete(null);
         }
         _notifyListeners();
         return true;
       },
-      //!!! toList()非常重要! 如果传入的pages是同一个ref，flutter会认为无变化
+//!!! toList()非常重要! 如果传入的pages是同一个ref，flutter会认为无变化
       pages: _pages.toList(),
     );
   }
@@ -202,8 +273,8 @@ class _MyRouterDelegate extends RouterDelegate<RouteInformation> with ChangeNoti
   Future<R?> _push<R>(String location) {
     Screen screen = _navigable.switchTo(location);
     _Page page = screen._page;
-    //把completer的完成指责放权给各Screen后，框架需监听其完成后删除Page
-    //并在onPopPage后
+//把completer的完成指责放权给各Screen后，框架需监听其完成后删除Page
+//并在onPopPage后
     page.completer.future.whenComplete(() {
       _pages.remove(page);
       notifyListeners();

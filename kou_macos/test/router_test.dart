@@ -24,7 +24,7 @@ class TestRootLayout extends StatelessWidget with LayoutMixin {
 
 void main() {
   testWidgets('router test', (WidgetTester tester) async {
-    var router = ToConfig(
+    var router = ToRouter(
         root: To(name: "/", layout: layout, page: (context, state) => const Text("/"), children: [
       To(name: "users", page: (context, state) => const Text("/users")),
       To(name: "user", children: [
@@ -35,7 +35,24 @@ void main() {
 
     print(router.root.toString(deep: true));
 
-
     // expect("/", router.match("/").path);
+  });
+
+  test('ToPathSegment.parse', () {
+    expect(ToPathSegment.parse("a"), equals(ToPathSegment(name: "a", type: PathSegmentType.normal)));
+    expect(ToPathSegment.parse("[id]"), equals(ToPathSegment(name: "id", type: PathSegmentType.dynamic)));
+    expect(ToPathSegment.parse("[...files]"), equals(ToPathSegment(name: "files", type: PathSegmentType.dynamicAll)));
+
+
+    //error arg
+    expect(
+      () => ToPathSegment.parse("[]"),
+      throwsA(isAssertionError.having((x) => x.toString(), "assert", contains("""'name!="[]"': is not true."""))),
+    );
+
+    expect(
+          () => ToPathSegment.parse("[...]"),
+      throwsA(isAssertionError.having((x) => x.toString(), "assert", contains("""'name!="[...]"': is not true."""))),
+    );
   });
 }

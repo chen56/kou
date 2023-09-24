@@ -12,7 +12,7 @@ class App extends StatefulWidget {
 }
 
 class _AppState extends State<App> {
-  final ToConfig goConfig = createGoConfig();
+  final ToRouter goConfig = createRouter();
 
   @override
   void initState() {
