@@ -14,39 +14,58 @@ class RouteState {}
 
 typedef PageBuilder = Widget Function(BuildContext context, RouteState state);
 
-class KRoute {
-  KRoute({
+class ToConfig{
+  To root;
+  ToConfig({required this.root});
+}
+
+/// Go == Route , Route名字被系统包占用，用Go替代
+/// 官方的go_router内部略显复杂，且没有我们想要的layout等功能，所以自定一个简化版的to_router
+class To {
+  To({
     required this.name,
     this.layout,
     this.page,
-    this.routes = const [],
+    this.children = const [],
   }) {
-    for (var route in routes) {
+    for (var route in children) {
       route.parent = this;
     }
   }
 
   final String name;
-  late final KRoute? parent;
+  late final To? parent;
   final LayoutBuilder? layout;
   final PageBuilder? page;
-  final List<KRoute> routes;
+  List<To> children;
 
-  List<KRoute> toList({
+  To children2(List<To> children) {
+    return To(name: name, layout: layout, page: page, children: children);
+  }
+
+  To child2(To go) {
+    return To(name: name, layout: layout, page: page, children: children);
+  }
+
+  To call(List<To> children) {
+    return To(name: name, layout: layout, page: page, children: children);
+  }
+
+  List<To> toList({
     bool includeThis = true,
-    bool Function(KRoute path)? test,
-    Comparator<KRoute>? sortBy,
+    bool Function(To path)? test,
+    Comparator<To>? sortBy,
   }) {
     test = test ?? (e) => true;
     if (!test(this)) {
       return [];
     }
-    List<KRoute> children = List.from(routes);
+    List<To> sorted = List.from(children);
     if (sortBy != null) {
-      children.sort(sortBy);
+      sorted.sort(sortBy);
     }
 
-    var flatChildren = children.expand((child) {
+    var flatChildren = sorted.expand((child) {
       return child.toList(includeThis: true, test: test, sortBy: sortBy);
     }).toList();
     return includeThis ? [this, ...flatChildren] : flatChildren;
@@ -54,12 +73,11 @@ class KRoute {
 
   @override
   String toString({bool deep = false}) {
-    if (!deep) return "<Route path='$name' routes=[${routes.length}]/>";
+    if (!deep) return "<Route path='$name' routes=[${children.length}]/>";
     return _toStringDeep(level: 0);
   }
 
   String _toStringDeep({int level = 0}) {
-    var children = routes;
     if (children.isEmpty) {
       return "${"  " * level}<Route name='$name'/>";
     }
@@ -70,23 +88,11 @@ ${"  " * level}</Route>''';
   }
 }
 
-class KRouter {
-  final KRoute root;
-
-  KRouter({required this.root});
-
-// RouteInstance match(String location) {
-//   var uri =  Uri.parse(location);
-//   // /user/1/
-//   // /1
-// }
-}
-
 class RouteInstance {}
 
 /// navigator_v2 是基础包，不依赖其他业务代码
-class NavigatorV2 extends StatelessWidget {
-  const NavigatorV2._({
+class ToNavigator extends StatelessWidget {
+  const ToNavigator._({
     required GlobalKey<NavigatorState> navigatorKey,
     required List<_Page<dynamic>> pages,
     required dynamic Function() notifyListeners,
@@ -101,8 +107,8 @@ class NavigatorV2 extends StatelessWidget {
   final Function() _notifyListeners;
   final _MyRouterDelegate _routerDelegate;
 
-  static NavigatorV2 of(BuildContext context) {
-    return context.findAncestorWidgetOfExactType<NavigatorV2>()!;
+  static ToNavigator of(BuildContext context) {
+    return context.findAncestorWidgetOfExactType<ToNavigator>()!;
   }
 
   @override
@@ -179,7 +185,7 @@ class _MyRouterDelegate extends RouterDelegate<RouteInformation> with ChangeNoti
 
   @override
   Widget build(BuildContext context) {
-    return NavigatorV2._(
+    return ToNavigator._(
       routerDelegate: this,
       navigatorKey: navigatorKey,
       pages: _pages,
@@ -215,7 +221,7 @@ class _MyRouterDelegate extends RouterDelegate<RouteInformation> with ChangeNoti
   @override
   RouteInformation? get currentConfiguration {
     if (_pages.isEmpty) return null;
-    return RouteInformation(uri: Uri.parse(_pages.last.name??"/"));
+    return RouteInformation(uri: Uri.parse(_pages.last.name ?? "/"));
   }
 }
 
@@ -238,11 +244,11 @@ mixin Screen<R> on Widget {
   String get location;
 
   @protected
-  Uri get uri=>Uri.parse(location);
+  Uri get uri => Uri.parse(location);
 
   @protected
   Future<R?> push(BuildContext context) {
-    return NavigatorV2.of(context).push<R>(location.toString());
+    return ToNavigator.of(context).push<R>(location.toString());
   }
 
   @override

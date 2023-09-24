@@ -26,5 +26,5 @@ void main() {
   }
 
   initWindow();
-  runApp(MyApp());
+  runApp(const App(title:"kou cloud apps"));
 }

@@ -7,7 +7,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:kou_macos/src/common/router.dart';
+import 'package:kou_macos/src/common/to_router.dart';
 
 LayoutMixin layout(BuildContext context) {
   return const TestRootLayout();
@@ -18,22 +18,23 @@ class TestRootLayout extends StatelessWidget with LayoutMixin {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(body: Row(children: [Text("layout root")]));
+    return const Scaffold(body: Row(children: [Text("layout: /")]));
   }
 }
 
 void main() {
   testWidgets('router test', (WidgetTester tester) async {
-    var router = KRouter(
-        root: KRoute(name: "/", layout: layout, page: (context, state) => const Text("/"), routes: [
-      KRoute(name: "users", page: (context, state) => const Text("/users")),
-      KRoute(name: "user", routes: [
-        KRoute(name: "[user_id]", page: (context, state) => const Text("/user/1")),
+    var router = ToConfig(
+        root: To(name: "/", layout: layout, page: (context, state) => const Text("/"), children: [
+      To(name: "users", page: (context, state) => const Text("/users")),
+      To(name: "user", children: [
+        To(name: "[user_id]", page: (context, state) => const Text("/user/1")),
       ]),
-      KRoute(name: "settings", page: (context, state) => const Text("/settings")),
+      To(name: "settings", page: (context, state) => const Text("/settings")),
     ]));
 
     print(router.root.toString(deep: true));
+
 
     // expect("/", router.match("/").path);
   });
