@@ -54,6 +54,9 @@ class ToPathSegment {
 
   ToPathSegment({required this.name, required this.type});
 
+  /// parse("user")       -->  ToPathSegment(name:"user",type:PathSegmentType.normal)
+  /// parse("[id]")       -->  ToPathSegment(name:"id",  type:PathSegmentType.dynamic)
+  /// parse("[...path]")  -->  ToPathSegment(name:"path",type:PathSegmentType.dynamicAll)
   static ToPathSegment parse(String name) {
     assert(name.isNotEmpty);
 
@@ -61,9 +64,10 @@ class ToPathSegment {
       return ToPathSegment(name: name, type: PathSegmentType.normal);
     }
 
-    // name 现在是[...xxx]或[xx]
     assert(name!="[]");
     assert(name!="[...]");
+
+    // name 现在是[...xxx]或[xx]
 
     final removeBrackets = name.substring(1, name.length - 1);
 
