@@ -3,7 +3,34 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:kou_macos/src/common/log.dart';
-import "package:path/path.dart" as path_;
+import 'package:path/path.dart' as path_;
+
+/*
+## 用例：聊天窗口在
+  手机屏：push新page
+  桌面屏：层级展示（没有push新page）
+### 方案1:
+/
+  main layout:MainWindowLayout
+    chat layout: ChatsLayout page:chatsPage(空页面)  // windows:  默认， mobile :/pushUpPage/main/chat/1 ,
+      [user_id] page: chatPage
+    通讯录
+    发现
+    我
+  pushUpPage
+    main
+      chat
+        [user_id]  ref-> /main/chat/user_id
+
+### 方案2:
+/
+  main layout:MainWindowLayout
+    chat layout: ChatsLayout page:chatsPage(空页面)  // windows:  默认， mobile :/pushUpPage/main/chat/1 ,
+      [user_id] page: chatPage , layoutRetry: LayoutRetry.up   // fallStrategy: 页面踏空策略，如果页面没有被上游layout处理，则用此此略push一个新page
+    通讯录
+    发现
+    我
+ */
 
 mixin LayoutMixin on Widget {}
 
@@ -28,6 +55,15 @@ class ToRouter {
 //       testFunction([1, 2]);
 //     }
 // }
+}
+
+/// Layout失败重试策略
+enum LayoutRetry {
+  /// 失败后, 直接放弃layout，push 此页面自己的内容
+  none,
+
+  /// 失败后, 再尝试用上层layout处理
+  up;
 }
 
 enum PathSegmentType {
@@ -64,8 +100,8 @@ class ToPathSegment {
       return ToPathSegment(name: name, type: PathSegmentType.normal);
     }
 
-    assert(name!="[]");
-    assert(name!="[...]");
+    assert(name != "[]");
+    assert(name != "[...]");
 
     // name 现在是[...xxx]或[xx]
 
@@ -79,7 +115,7 @@ class ToPathSegment {
   }
 
   @override
-  bool operator ==(Object other) =>other is ToPathSegment && other.runtimeType == runtimeType && other.name == name && other.type == type;
+  bool operator ==(Object other) => other is ToPathSegment && other.runtimeType == runtimeType && other.name == name && other.type == type;
 
   @override
   int get hashCode => Object.hash(name, type);
@@ -104,22 +140,24 @@ class To {
   To({
     required this.name,
     this.layout,
+    this.layoutRetry = LayoutRetry.none,
     this.page,
     this.children = const [],
   })  : assert(children.isNotEmpty || page != null),
         assert(name == "/" || !name.contains("/")),
-        pathSegemntType = PathSegmentType.parse(name) {
+        pathSegmentType = PathSegmentType.parse(name) {
     for (var route in children) {
       route.parent = this;
     }
   }
 
   final String name;
-  final PathSegmentType pathSegemntType;
+  final PathSegmentType pathSegmentType;
 
   late final To? parent;
   final LayoutBuilder? layout;
   final PageBuilder? page;
+  final LayoutRetry layoutRetry;
   List<To> children;
 
   bool get isRoot => parent == null;
