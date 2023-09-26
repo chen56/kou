@@ -32,7 +32,7 @@ class Layout extends StatelessWidget with LayoutMixin{
     var scaffold = Scaffold(
       primary: true,
       // content...
-      appBar: AppBar(toolbarHeight: 30, title: Text("widget.title")),
+      appBar: AppBar(toolbarHeight: 30, title: const Text("widget.title")),
       floatingActionButton: FloatingActionButton(onPressed: (){}, tooltip: 'Increment', child: const Icon(Icons.add)),
       body: Row(
         children: [

@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:kou_macos/src/common/log.dart';
 import 'package:path/path.dart' as path_;
 
 /*
@@ -47,6 +46,12 @@ class ToRouter {
 
   ToRouter({required this.root});
 
+  static ToRouter of(BuildContext context) {
+    var result = context.findAncestorWidgetOfExactType<_ToNavigator>();
+    assert(result!=null,"应把ToRouter配置到您的App中: MaterialApp.router(routerConfig:ToRouter(...))");
+    return result!.router;
+  }
+
 // To match(Uri uri) {
 //   if (uri.path == "/") return root;
 //   To current = root;
@@ -55,6 +60,23 @@ class ToRouter {
 //       testFunction([1, 2]);
 //     }
 // }
+
+  // static RouterConfig<RouteInformation> config() {
+  //   return RouterConfig(
+  //     routeInformationProvider: PlatformRouteInformationProvider(
+  //       initialRouteInformation: RouteInformation(
+  //         uri: Uri.parse("/"),
+  //       ),
+  //     ),
+  //     routerDelegate: LoggableRouterDelegate(
+  //         logger: logger,
+  //         delegate: _MyRouterDelegate(
+  //           initial: navigable.initial,
+  //           navigable: navigable,
+  //         )),
+  //     routeInformationParser: _Parser(),
+  //   );
+  // }
 }
 
 /// Layout失败重试策略
@@ -204,25 +226,26 @@ ${"  " * level}</Route>''';
 class RouteInstance {}
 
 /// navigator_v2 是基础包，不依赖其他业务代码
-class ToNavigator extends StatelessWidget {
-  const ToNavigator._({
+class _ToNavigator extends StatelessWidget {
+
+  const _ToNavigator._({
     required GlobalKey<NavigatorState> navigatorKey,
+    required this.router,
     required List<_Page<dynamic>> pages,
     required dynamic Function() notifyListeners,
-    required _MyRouterDelegate routerDelegate,
+    required _RouterDelegate routerDelegate,
   })  : _navigatorKey = navigatorKey,
         _notifyListeners = notifyListeners,
         _pages = pages,
         _routerDelegate = routerDelegate;
 
+  final ToRouter router;
+
   final GlobalKey<NavigatorState> _navigatorKey;
   final List<_Page> _pages;
   final Function() _notifyListeners;
-  final _MyRouterDelegate _routerDelegate;
+  final _RouterDelegate _routerDelegate;
 
-  static ToNavigator of(BuildContext context) {
-    return context.findAncestorWidgetOfExactType<ToNavigator>()!;
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -252,26 +275,10 @@ class ToNavigator extends StatelessWidget {
   Future<R?> push<R>(String location) {
     return _routerDelegate._push<R>(location);
   }
-
-  static RouterConfig<RouteInformation> config({required Navigable navigable}) {
-    return RouterConfig(
-      routeInformationProvider: PlatformRouteInformationProvider(
-          initialRouteInformation: RouteInformation(
-        uri: navigable.initial.uri,
-      )),
-      routerDelegate: LoggableRouterDelegate(
-          logger: logger,
-          delegate: _MyRouterDelegate(
-            initial: navigable.initial,
-            navigable: navigable,
-          )),
-      routeInformationParser: _Parser(),
-    );
-  }
 }
 
-class _Parser extends RouteInformationParser<RouteInformation> {
-  _Parser();
+class _RouteInformationParser extends RouteInformationParser<RouteInformation> {
+  _RouteInformationParser();
 
   @override
   Future<RouteInformation> parseRouteInformation(RouteInformation routeInformation) {
@@ -284,21 +291,25 @@ class _Parser extends RouteInformationParser<RouteInformation> {
   }
 }
 
-class _MyRouterDelegate extends RouterDelegate<RouteInformation> with ChangeNotifier, PopNavigatorRouterDelegateMixin<RouteInformation> {
-  _MyRouterDelegate({
-    required Screen initial,
-    required Navigable navigable,
+class _RouterDelegate extends RouterDelegate<RouteInformation> with ChangeNotifier, PopNavigatorRouterDelegateMixin<RouteInformation> {
+  _RouterDelegate({
+    required this.router,
+    required Temp_Screen initial,
+    required Temp_Navigable navigable,
   })  : _pages = List.from([initial._page], growable: true),
         _navigable = navigable;
 
+  final ToRouter router;
   final List<_Page> _pages;
-  final Navigable _navigable;
+  final Temp_Navigable _navigable;
+
   @override
   final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>(debugLabel: "myNavigator");
 
   @override
   Widget build(BuildContext context) {
-    return ToNavigator._(
+    return _ToNavigator._(
+      router:router,
       routerDelegate: this,
       navigatorKey: navigatorKey,
       pages: _pages,
@@ -313,7 +324,7 @@ class _MyRouterDelegate extends RouterDelegate<RouteInformation> with ChangeNoti
   }
 
   Future<R?> _push<R>(String location) {
-    Screen screen = _navigable.switchTo(location);
+    Temp_Screen screen = _navigable.switchTo(location);
     _Page page = screen._page;
 //把completer的完成指责放权给各Screen后，框架需监听其完成后删除Page
 //并在onPopPage后
@@ -349,7 +360,7 @@ class _Page<R> extends MaterialPage<R> {
 }
 
 /// A: Screen参数类型，R: push返回值类型
-mixin Screen<R> on Widget {
+mixin Temp_Screen<R> on Widget {
   @protected
   late final _Page<R> _page = _Page(name: location, child: this);
 
@@ -359,10 +370,10 @@ mixin Screen<R> on Widget {
   @protected
   Uri get uri => Uri.parse(location);
 
-  @protected
-  Future<R?> push(BuildContext context) {
-    return ToNavigator.of(context).push<R>(location.toString());
-  }
+  // @protected
+  // Future<R?> push(BuildContext context) {
+  //   return _ToNavigator.of(context).push<R>(location.toString());
+  // }
 
   @override
   String toStringShort() {
@@ -371,8 +382,8 @@ mixin Screen<R> on Widget {
 }
 
 /// navigator_v2.dart 是更初级的包，用此类隔离其他包的依赖性
-mixin Navigable {
-  Screen get initial;
+mixin Temp_Navigable {
+  Temp_Screen get initial;
 
-  Screen switchTo(String location);
+  Temp_Screen switchTo(String location);
 }
