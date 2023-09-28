@@ -5,8 +5,8 @@ import 'package:kou_macos/src/routes/tencent_cloud/page.dart' as tencent_cloud;
 
 // 将来天应从目录结构自动生成
 ToRouter createRouter() {
-  To r = To(name: "/", page: root.page, layout: root_layout.layout, children: [
-    To(name: "tencent_cloud",  page: tencent_cloud.page),
+  To rootRoute = To(dir: "/", page: root.page, layout: root_layout.layout, children: [
+    To(dir: "tencent_cloud",  page: tencent_cloud.page),
   ]);
-  return ToRouter(root: r);
+  return ToRouter(root: rootRoute);
 }

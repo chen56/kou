@@ -47,10 +47,22 @@ class ToRouter {
   ToRouter({required this.root});
 
   static ToRouter of(BuildContext context) {
-    var result = context.findAncestorWidgetOfExactType<_ToNavigator>();
-    assert(result!=null,"应把ToRouter配置到您的App中: MaterialApp.router(routerConfig:ToRouter(...))");
+    var result = context.findAncestorWidgetOfExactType<_Navigator>();
+    assert(result != null, "应把ToRouter配置到您的App中: MaterialApp.router(routerConfig:ToRouter(...))");
     return result!.router;
   }
+
+//   MatchTo matchUri(Uri uri) {
+//   if(uri.path=="/") return root;
+//
+//   To node = root;
+//   var pathSegments= uri.pathSegments;
+//   // node.
+//
+// }
+// To match(String uri) {
+//    return matchUri(Uri.parse(uri));
+// }
 
 // To match(Uri uri) {
 //   if (uri.path == "/") return root;
@@ -61,22 +73,22 @@ class ToRouter {
 //     }
 // }
 
-  // static RouterConfig<RouteInformation> config() {
-  //   return RouterConfig(
-  //     routeInformationProvider: PlatformRouteInformationProvider(
-  //       initialRouteInformation: RouteInformation(
-  //         uri: Uri.parse("/"),
-  //       ),
-  //     ),
-  //     routerDelegate: LoggableRouterDelegate(
-  //         logger: logger,
-  //         delegate: _MyRouterDelegate(
-  //           initial: navigable.initial,
-  //           navigable: navigable,
-  //         )),
-  //     routeInformationParser: _Parser(),
-  //   );
-  // }
+// static RouterConfig<RouteInformation> config() {
+//   return RouterConfig(
+//     routeInformationProvider: PlatformRouteInformationProvider(
+//       initialRouteInformation: RouteInformation(
+//         uri: Uri.parse("/"),
+//       ),
+//     ),
+//     routerDelegate: LoggableRouterDelegate(
+//         logger: logger,
+//         delegate: _MyRouterDelegate(
+//           initial: navigable.initial,
+//           navigable: navigable,
+//         )),
+//     routeInformationParser: _Parser(),
+//   );
+// }
 }
 
 /// Layout失败重试策略
@@ -88,7 +100,7 @@ enum LayoutRetry {
   up;
 }
 
-enum PathSegmentType {
+enum ToNodeType {
   /// 正常路径片段: /settings
   normal,
 
@@ -101,25 +113,25 @@ enum PathSegmentType {
   ///     /file/a/b/c.txt -> path==a/b/c.txt
   dynamicAll;
 
-  static PathSegmentType parse(String name) {
-    return PathSegmentType.normal;
+  static ToNodeType parse(String name) {
+    return ToNodeType.normal;
   }
 }
 
-class ToPathSegment {
-  final String name;
-  final PathSegmentType type;
+class ToNode {
+  final String part;
+  final ToNodeType type;
 
-  ToPathSegment({required this.name, required this.type});
+  ToNode({required this.part, required this.type});
 
-  /// parse("user")       -->  ToPathSegment(name:"user",type:PathSegmentType.normal)
-  /// parse("[id]")       -->  ToPathSegment(name:"id",  type:PathSegmentType.dynamic)
-  /// parse("[...path]")  -->  ToPathSegment(name:"path",type:PathSegmentType.dynamicAll)
-  static ToPathSegment parse(String name) {
+  /// parse("user")       -->  ToPart(name:"user",type:ToNodeType.normal)
+  /// parse("[id]")       -->  ToPart(name:"id",  type:ToNodeType.dynamic)
+  /// parse("[...path]")  -->  ToPart(name:"path",type:ToNodeType.dynamicAll)
+  static ToNode parse(String name) {
     assert(name.isNotEmpty);
 
     if (name[0] != "[" || name[name.length - 1] != "]") {
-      return ToPathSegment(name: name, type: PathSegmentType.normal);
+      return ToNode(part: name, type: ToNodeType.normal);
     }
 
     assert(name != "[]");
@@ -130,29 +142,29 @@ class ToPathSegment {
     final removeBrackets = name.substring(1, name.length - 1);
 
     if (removeBrackets.startsWith("...")) {
-      return ToPathSegment(name: removeBrackets.substring(3), type: PathSegmentType.dynamicAll);
+      return ToNode(part: removeBrackets.substring(3), type: ToNodeType.dynamicAll);
     } else {
-      return ToPathSegment(name: removeBrackets, type: PathSegmentType.dynamic);
+      return ToNode(part: removeBrackets, type: ToNodeType.dynamic);
     }
   }
 
   @override
-  bool operator ==(Object other) => other is ToPathSegment && other.runtimeType == runtimeType && other.name == name && other.type == type;
+  bool operator ==(Object other) => other is ToNode && other.runtimeType == runtimeType && other.part == part && other.type == type;
 
   @override
-  int get hashCode => Object.hash(name, type);
+  int get hashCode => Object.hash(part, type);
 
-  String toSegmentString() {
+  String toPartString() {
     return switch (type) {
-      PathSegmentType.dynamic => "[$name]",
-      PathSegmentType.dynamicAll => "[...$name]",
-      _ => name,
+      ToNodeType.dynamic => "[$part]",
+      ToNodeType.dynamicAll => "[...$part]",
+      _ => part,
     };
   }
 
   @override
   String toString() {
-    return toSegmentString();
+    return toPartString();
   }
 }
 
@@ -160,21 +172,20 @@ class ToPathSegment {
 /// 官方的go_router内部略显复杂，且没有我们想要的layout等功能，所以自定一个简化版的to_router
 class To {
   To({
-    required this.name,
+    required String dir,
     this.layout,
     this.layoutRetry = LayoutRetry.none,
     this.page,
     this.children = const [],
   })  : assert(children.isNotEmpty || page != null),
-        assert(name == "/" || !name.contains("/")),
-        pathSegmentType = PathSegmentType.parse(name) {
+        assert(dir == "/" || !dir.contains("/")),
+        node = ToNode.parse(dir) {
     for (var route in children) {
       route.parent = this;
     }
   }
 
-  final String name;
-  final PathSegmentType pathSegmentType;
+  final ToNode node;
 
   late final To? parent;
   final LayoutBuilder? layout;
@@ -184,7 +195,7 @@ class To {
 
   bool get isRoot => parent == null;
 
-  String get path => isRoot ? "/" : path_.join(parent!.path, name);
+  String get path => isRoot ? "/" : path_.join(parent!.path, node.part);
 
   List<To> toList({
     bool includeThis = true,
@@ -208,86 +219,56 @@ class To {
 
   @override
   String toString({bool deep = false}) {
-    if (!deep) return "<Route path='$name' routes=[${children.length}]/>";
+    if (!deep) return "<Route path='$node' routes=[${children.length}]/>";
     return _toStringDeep(level: 0);
   }
 
   String _toStringDeep({int level = 0}) {
     if (children.isEmpty) {
-      return "${"  " * level}<Route name='$name'/>";
+      return "${"  " * level}<Route name='$node'/>";
     }
 
-    return '''${"  " * level}<Route name='$name'>
+    return '''${"  " * level}<Route name='$node'>
 ${children.map((e) => e._toStringDeep(level: level + 1)).join("\n")}
 ${"  " * level}</Route>''';
   }
 }
 
-class RouteInstance {}
+class MatchTo {}
 
-/// navigator_v2 是基础包，不依赖其他业务代码
-class _ToNavigator extends StatelessWidget {
-
-  const _ToNavigator._({
-    required GlobalKey<NavigatorState> navigatorKey,
+/// 主要用于存储 [router]，便于[ToRouter.of]
+class _Navigator extends StatelessWidget {
+  const _Navigator({
     required this.router,
-    required List<_Page<dynamic>> pages,
-    required dynamic Function() notifyListeners,
-    required _RouterDelegate routerDelegate,
-  })  : _navigatorKey = navigatorKey,
-        _notifyListeners = notifyListeners,
-        _pages = pages,
-        _routerDelegate = routerDelegate;
+    required this.builder,
+  });
 
   final ToRouter router;
-
-  final GlobalKey<NavigatorState> _navigatorKey;
-  final List<_Page> _pages;
-  final Function() _notifyListeners;
-  final _RouterDelegate _routerDelegate;
-
+  final WidgetBuilder builder;
 
   @override
   Widget build(BuildContext context) {
-    return Navigator(
-      key: _navigatorKey,
-      onPopPage: (route, result) {
-        if (!route.didPop(result)) {
-          return false;
-        }
-        if (_pages.isEmpty) {
-          return true;
-        }
-        var page = _pages.removeLast();
-//把completer的完成指责放权给各Screen自己后，
-//如果由系统back button触发onPopPage，框架应使completer完成，要不会泄露Future
-        if (!page.completer.isCompleted) {
-          page.completer.complete(null);
-        }
-        _notifyListeners();
-        return true;
-      },
-//!!! toList()非常重要! 如果传入的pages是同一个ref，flutter会认为无变化
-      pages: _pages.toList(),
-    );
-  }
-
-  Future<R?> push<R>(String location) {
-    return _routerDelegate._push<R>(location);
+    return builder(context);
   }
 }
 
-class _RouteInformationParser extends RouteInformationParser<RouteInformation> {
+class ToUri {
+  final Uri uri;
+
+  ToUri({required this.uri});
+}
+
+class _RouteInformationParser extends RouteInformationParser<ToUri> {
   _RouteInformationParser();
 
   @override
-  Future<RouteInformation> parseRouteInformation(RouteInformation routeInformation) {
-    return SynchronousFuture(routeInformation);
+  Future<ToUri> parseRouteInformation(RouteInformation routeInformation) {
+    return SynchronousFuture(ToUri(uri: routeInformation.uri));
   }
 
   @override
-  RouteInformation? restoreRouteInformation(RouteInformation configuration) {
-    return configuration;
+  RouteInformation? restoreRouteInformation(ToUri configuration) {
+    return RouteInformation(uri: configuration.uri);
   }
 }
 
@@ -305,17 +286,6 @@ class _RouterDelegate extends RouterDelegate<RouteInformation> with ChangeNotifi
 
   @override
   final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>(debugLabel: "myNavigator");
-
-  @override
-  Widget build(BuildContext context) {
-    return _ToNavigator._(
-      router:router,
-      routerDelegate: this,
-      navigatorKey: navigatorKey,
-      pages: _pages,
-      notifyListeners: notifyListeners,
-    );
-  }
 
   @override
   Future<void> setNewRoutePath(RouteInformation configuration) {
@@ -346,6 +316,38 @@ class _RouterDelegate extends RouterDelegate<RouteInformation> with ChangeNotifi
   RouteInformation? get currentConfiguration {
     if (_pages.isEmpty) return null;
     return RouteInformation(uri: Uri.parse(_pages.last.name ?? "/"));
+  }
+
+  Widget _build(BuildContext context) {
+    return Navigator(
+      key: navigatorKey,
+      onPopPage: (route, result) {
+        if (!route.didPop(result)) {
+          return false;
+        }
+        if (_pages.isEmpty) {
+          return true;
+        }
+        var page = _pages.removeLast();
+//把completer的完成指责放权给各Screen自己后，
+//如果由系统back button触发onPopPage，框架应使completer完成，要不会泄露Future
+        if (!page.completer.isCompleted) {
+          page.completer.complete(null);
+        }
+        notifyListeners();
+        return true;
+      },
+//!!! toList()非常重要! 如果传入的pages是同一个ref，flutter会认为无变化
+      pages: _pages.toList(),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return _Navigator(
+      builder: _build,
+      router: router,
+    );
   }
 }
 

@@ -23,36 +23,54 @@ class TestRootLayout extends StatelessWidget with LayoutMixin {
 }
 
 void main() {
-  testWidgets('router test', (WidgetTester tester) async {
+
+  group("ToRouter.parse", () {
     var router = ToRouter(
-        root: To(name: "/", layout: layout, page: (context, state) => const Text("/"), children: [
-      To(name: "users", page: (context, state) => const Text("/users")),
-      To(name: "user", children: [
-        To(name: "[user_id]", page: (context, state) => const Text("/user/1")),
-      ]),
-      To(name: "settings", page: (context, state) => const Text("/settings")),
-    ]));
+        root: To(dir: "/", layout: layout, page: (context, state) => const Text("/"), children: [
+          To(dir: "users", page: (context, state) => const Text("/users")),
+          To(dir: "user", children: [
+            To(dir: "[user_id]", page: (context, state) => const Text("/user/1")),
+          ]),
+          To(dir: "settings", page: (context, state) => const Text("/settings")),
+        ]));
 
-    print(router.root.toString(deep: true));
-
-    // expect("/", router.match("/").path);
+    test('ok', () {
+      // var to = router.parse("/");
+      // expect(to.path,equals("expected"));
+      // expect("/", router.match("/").path);
+    });
   });
 
-  test('ToPathSegment.parse', () {
-    expect(ToPathSegment.parse("a"), equals(ToPathSegment(name: "a", type: PathSegmentType.normal)));
-    expect(ToPathSegment.parse("[id]"), equals(ToPathSegment(name: "id", type: PathSegmentType.dynamic)));
-    expect(ToPathSegment.parse("[...files]"), equals(ToPathSegment(name: "files", type: PathSegmentType.dynamicAll)));
+  group("ToPathSegment.parse", () {
+    test('ok', () {
+      var tests = [
+        (node: "a", expected: (part: "a", type: ToNodeType.normal)),
+        (node: "[id]", expected: (part: "id", type: ToNodeType.dynamic)),
+        (node: "[...files]", expected: (part: "files", type: ToNodeType.dynamicAll)),
+      ];
 
+      for (var t in tests) {
+        var result = ToNode.parse(t.node);
+        expect(result.part, equals(t.expected.part), reason: "test:${t}");
+        expect(result.type, equals(t.expected.type), reason: "test:${t}");
+      }
+    });
 
-    //error arg
-    expect(
-      () => ToPathSegment.parse("[]"),
-      throwsA(isAssertionError.having((x) => x.toString(), "assert", contains("""'name!="[]"': is not true."""))),
-    );
+    test('error', () {
+      //error arg
+      try {
+        ToNode.parse("[]");
+        fail("not here");
+      } catch (e) {
+        expect(e.toString(), contains("""'name != "[]"': is not true"""));
+      }
 
-    expect(
-          () => ToPathSegment.parse("[...]"),
-      throwsA(isAssertionError.having((x) => x.toString(), "assert", contains("""'name!="[...]"': is not true."""))),
-    );
+      try {
+        ToNode.parse("[...]");
+        fail("not here");
+      } catch (e) {
+        expect(e.toString(), contains("""'name != "[...]"': is not true"""));
+      }
+    });
   });
 }
