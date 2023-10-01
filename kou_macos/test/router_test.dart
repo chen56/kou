@@ -23,28 +23,37 @@ class TestRootLayout extends StatelessWidget with LayoutMixin {
 }
 
 void main() {
-
   group("ToRouter.parse", () {
     var router = ToRouter(
-        root: To(dir: "/", layout: layout, page: (context, state) => const Text("/"), children: [
-          To(dir: "users", page: (context, state) => const Text("/users")),
-          To(dir: "user", children: [
-            To(dir: "[user_id]", page: (context, state) => const Text("/user/1")),
-          ]),
-          To(dir: "settings", page: (context, state) => const Text("/settings")),
-        ]));
+        root: To(match: "/", children: [
+      To(match: "[user]", children: [
+        To(match: "[repository]", children: [
+          To(match: "issues"),
+        ]),
+      ]),
+      To(match: "settings", children: [
+        To(match: "[...setting_key]"),
+      ]),
+    ]));
+
+    void match(String path, {required ({String allPattern, Map<String, String> params}) expected}) {
+      var match = router.match(path);
+      expect(match.to.path,equals(expected.allPattern));
+      expect(match.params,equals(expected.params));
+    }
 
     test('ok', () {
-      // var to = router.parse("/");
-      // expect(to.path,equals("expected"));
-      // expect("/", router.match("/").path);
+      /// static 目录名 优先级高于 dynamic 目录名，同级中既有动态又有静态目录名时，优先匹配static
+      match("/settings", expected: (allPattern: "/settings", params: {}));
+
+      match("/chen56/note", expected: (allPattern: "/[user]/[repository]", params: {"user": "chen56", "repository": "note"}));
     });
   });
 
   group("ToPathSegment.parse", () {
     test('ok', () {
       var tests = [
-        (node: "a", expected: (part: "a", type: ToNodeType.normal)),
+        (node: "a", expected: (part: "a", type: ToNodeType.static)),
         (node: "[id]", expected: (part: "id", type: ToNodeType.dynamic)),
         (node: "[...files]", expected: (part: "files", type: ToNodeType.dynamicAll)),
       ];
@@ -71,6 +80,23 @@ void main() {
       } catch (e) {
         expect(e.toString(), contains("""'name != "[...]"': is not true"""));
       }
+    });
+  });
+
+  group("ToRouter.go", () {
+    var router = ToRouter(
+        root: To(match: "/", layout: layout, page: (context, state) => const Text("/"), children: [
+      To(match: "users", page: (context, state) => const Text("/users")),
+      To(match: "user", children: [
+        To(match: "[user_id]", page: (context, state) => const Text("/user/1")),
+      ]),
+      To(match: "settings", page: (context, state) => const Text("/settings")),
+    ]));
+
+    test('ok', () {
+      // var to = router.parse("/");
+      // expect(to.path,equals("expected"));
+      // expect("/", router.match("/").path);
     });
   });
 }

@@ -52,17 +52,21 @@ class ToRouter {
     return result!.router;
   }
 
-//   MatchTo matchUri(Uri uri) {
-//   if(uri.path=="/") return root;
-//
-//   To node = root;
-//   var pathSegments= uri.pathSegments;
-//   // node.
-//
-// }
-// To match(String uri) {
-//    return matchUri(Uri.parse(uri));
-// }
+  MatchTo matchUri(Uri uri) {
+    if (uri.path == "/") return MatchTo(uri: uri, to: root);
+
+    return MatchTo(
+      uri: uri,
+      to: root,
+    );
+    To node = root;
+    var pathSegments = uri.pathSegments;
+    // node.
+  }
+
+  MatchTo match(String uri) {
+    return matchUri(Uri.parse(uri));
+  }
 
 // To match(Uri uri) {
 //   if (uri.path == "/") return root;
@@ -102,7 +106,7 @@ enum LayoutRetry {
 
 enum ToNodeType {
   /// 正常路径片段: /settings
-  normal,
+  static,
 
   /// 动态参数  /user/[id]  :
   ///     /user/1 -> id==1
@@ -114,7 +118,7 @@ enum ToNodeType {
   dynamicAll;
 
   static ToNodeType parse(String name) {
-    return ToNodeType.normal;
+    return ToNodeType.static;
   }
 }
 
@@ -131,7 +135,7 @@ class ToNode {
     assert(name.isNotEmpty);
 
     if (name[0] != "[" || name[name.length - 1] != "]") {
-      return ToNode(part: name, type: ToNodeType.normal);
+      return ToNode(part: name, type: ToNodeType.static);
     }
 
     assert(name != "[]");
@@ -172,20 +176,25 @@ class ToNode {
 /// 官方的go_router内部略显复杂，且没有我们想要的layout等功能，所以自定一个简化版的to_router
 class To {
   To({
-    required String dir,
+    required this.match,
     this.layout,
     this.layoutRetry = LayoutRetry.none,
     this.page,
     this.children = const [],
   })  : assert(children.isNotEmpty || page != null),
-        assert(dir == "/" || !dir.contains("/")),
-        node = ToNode.parse(dir) {
+        assert(match == "/" || !match.contains("/")) {
+    var (part, type) = _parse(match);
+    this.part = part;
+    this.type = type;
+
     for (var route in children) {
       route.parent = this;
     }
   }
 
-  final ToNode node;
+  final String match;
+  late final String part;
+  late final ToNodeType type;
 
   late final To? parent;
   final LayoutBuilder? layout;
@@ -195,7 +204,9 @@ class To {
 
   bool get isRoot => parent == null;
 
-  String get path => isRoot ? "/" : path_.join(parent!.path, node.part);
+  String get path => isRoot ? "/" : path_.join(parent!.path, part);
+
+  get allPattern => isRoot ? "/" : path_.join(parent!.allPattern, part);
 
   List<To> toList({
     bool includeThis = true,
@@ -217,24 +228,61 @@ class To {
     return includeThis ? [this, ...flatChildren] : flatChildren;
   }
 
+  /// parse("[...users]")
+  ///      -> (part:'users',type:ToNodeType.dynamicAll)
+  static (String, ToNodeType) _parse(String pattern) {
+    assert(pattern.isNotEmpty);
+
+    if (pattern[0] != "[" || pattern[pattern.length - 1] != "]") {
+      return (pattern, ToNodeType.static);
+    }
+
+    assert(pattern != "[]");
+    assert(pattern != "[...]");
+
+    // name 现在是[...xxx]或[xx]
+
+    final removeBrackets = pattern.substring(1, pattern.length - 1);
+
+    if (removeBrackets.startsWith("...")) {
+      return (removeBrackets.substring(3), ToNodeType.dynamicAll);
+    } else {
+      return (removeBrackets, ToNodeType.dynamic);
+    }
+  }
+
+  String toPartString() {
+    return switch (type) {
+      ToNodeType.dynamic => "[$part]",
+      ToNodeType.dynamicAll => "[...$part]",
+      _ => part,
+    };
+  }
+
   @override
   String toString({bool deep = false}) {
-    if (!deep) return "<Route path='$node' routes=[${children.length}]/>";
+    if (!deep) return "<Route name='$match' routes=[${children.length}]/>";
     return _toStringDeep(level: 0);
   }
 
   String _toStringDeep({int level = 0}) {
     if (children.isEmpty) {
-      return "${"  " * level}<Route name='$node'/>";
+      return "${"  " * level}<Route name='${match}'/>";
     }
 
-    return '''${"  " * level}<Route name='$node'>
+    return '''${"  " * level}<Route name='$match'>
 ${children.map((e) => e._toStringDeep(level: level + 1)).join("\n")}
 ${"  " * level}</Route>''';
   }
 }
 
-class MatchTo {}
+class MatchTo {
+  final To to;
+  final Uri uri;
+  final Map<String, String> params;
+
+  MatchTo({required this.uri, required this.to, this.params = const {}});
+}
 
 /// 主要用于存储 [router]，便于[ToRouter.of]
 class _Navigator extends StatelessWidget {
