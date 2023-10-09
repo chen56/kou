@@ -43,25 +43,55 @@ class RouteState {}
 
 class ToRouter {
   To root;
+  static final To defaultNotFound =
+      To("/404", page: (context, state) => const Text("404 not found"));
 
-  ToRouter({required this.root});
+  ToRouter({required this.root}) : assert(root.part == "/");
 
   static ToRouter of(BuildContext context) {
     var result = context.findAncestorWidgetOfExactType<_Navigator>();
     assert(result != null, "应把ToRouter配置到您的App中: MaterialApp.router(routerConfig:ToRouter(...))");
     return result!.router;
   }
-
   MatchTo matchUri(Uri uri) {
     if (uri.path == "/") return MatchTo(uri: uri, to: root);
 
-    return MatchTo(
-      uri: uri,
-      to: root,
-    );
-    To node = root;
-    var pathSegments = uri.pathSegments;
-    // node.
+    Map<String, String> params = {};
+    return root._match(uri: uri, segments: uri.pathSegments, params: params);
+  }
+
+  MatchTo matchUriV1(Uri uri) {
+    if (uri.path == "/") return MatchTo(uri: uri, to: root);
+
+    To? matched = root;
+    Map<String, String> params = {};
+
+    var segments = uri.pathSegments.iterator;
+    assert(segments.moveNext());
+
+    while (true) {
+      matched = matched!._matchChild(segment: segments.current);
+      if (matched == null) {
+        return MatchTo(uri: uri, to: defaultNotFound, params: params);
+      }
+      if (matched._paramType == ToNodeType.static) {
+        if (!segments.moveNext()) break;
+        continue;
+      } else if (matched._paramType == ToNodeType.dynamic) {
+        params[matched._paramName] = segments.current;
+        if (!segments.moveNext()) break;
+        continue;
+      } else if (matched._paramType == ToNodeType.dynamicAll) {
+        // /settings/[...key]/reset
+        // /settings/x/reset
+        params[matched._paramName] = !params.containsKey(matched._paramName)
+            ? segments.current
+            : path_.join(params[matched._paramName]!, segments.current);
+      } else {
+        throw AssertionError("not here _paramType:${matched._paramType}");
+      }
+    }
+    return MatchTo(uri: uri, to: matched, params: params);
   }
 
   MatchTo match(String uri) {
@@ -122,81 +152,31 @@ enum ToNodeType {
   }
 }
 
-class ToNode {
-  final String part;
-  final ToNodeType type;
-
-  ToNode({required this.part, required this.type});
-
-  /// parse("user")       -->  ToPart(name:"user",type:ToNodeType.normal)
-  /// parse("[id]")       -->  ToPart(name:"id",  type:ToNodeType.dynamic)
-  /// parse("[...path]")  -->  ToPart(name:"path",type:ToNodeType.dynamicAll)
-  static ToNode parse(String name) {
-    assert(name.isNotEmpty);
-
-    if (name[0] != "[" || name[name.length - 1] != "]") {
-      return ToNode(part: name, type: ToNodeType.static);
-    }
-
-    assert(name != "[]");
-    assert(name != "[...]");
-
-    // name 现在是[...xxx]或[xx]
-
-    final removeBrackets = name.substring(1, name.length - 1);
-
-    if (removeBrackets.startsWith("...")) {
-      return ToNode(part: removeBrackets.substring(3), type: ToNodeType.dynamicAll);
-    } else {
-      return ToNode(part: removeBrackets, type: ToNodeType.dynamic);
-    }
-  }
-
-  @override
-  bool operator ==(Object other) => other is ToNode && other.runtimeType == runtimeType && other.part == part && other.type == type;
-
-  @override
-  int get hashCode => Object.hash(part, type);
-
-  String toPartString() {
-    return switch (type) {
-      ToNodeType.dynamic => "[$part]",
-      ToNodeType.dynamicAll => "[...$part]",
-      _ => part,
-    };
-  }
-
-  @override
-  String toString() {
-    return toPartString();
-  }
-}
-
 /// To == go_router.GoRoute
 /// 官方的go_router内部略显复杂，且没有我们想要的layout等功能，所以自定一个简化版的to_router
 class To {
-  To({
-    required this.match,
+  To(
+    this.part, {
     this.layout,
     this.layoutRetry = LayoutRetry.none,
     this.page,
     this.children = const [],
   })  : assert(children.isNotEmpty || page != null),
-        assert(match == "/" || !match.contains("/")) {
-    var (part, type) = _parse(match);
-    this.part = part;
-    this.type = type;
+        assert(part == "/" || !part.contains("/")) {
+    var parsed = _parse(part);
+    _paramName = parsed.$1;
+    _paramType = parsed.$2;
 
     for (var route in children) {
       route.parent = this;
     }
   }
 
-  final String match;
-  late final String part;
-  late final ToNodeType type;
+  final String part;
+  late final String _paramName;
+  late final ToNodeType _paramType;
 
-  late final To? parent;
+  To? parent;
   final LayoutBuilder? layout;
   final PageBuilder? page;
   final LayoutRetry layoutRetry;
@@ -206,7 +186,46 @@ class To {
 
   String get path => isRoot ? "/" : path_.join(parent!.path, part);
 
-  get allPattern => isRoot ? "/" : path_.join(parent!.allPattern, part);
+  To? _matchChild({required String segment}) {
+    To? matched = children
+        .where((e) => e._paramType == ToNodeType.static)
+        .where((e) => segment == e._paramName)
+        .firstOrNull;
+    if (matched != null) return matched;
+    matched = children
+        .where((e) => e._paramType == ToNodeType.dynamic || e._paramType == ToNodeType.dynamicAll)
+        .firstOrNull;
+    if (matched != null) return matched;
+    return null;
+  }
+
+  MatchTo _match(
+      {required Uri uri, required List<String> segments, required Map<String, String> params}) {
+    assert(segments.isNotEmpty);
+
+    To? matched = _matchChild(segment: segments[0]);
+    if (matched == null) {
+      return MatchTo(uri: uri, to: ToRouter.defaultNotFound, params: params);
+    }
+
+    if (matched._paramType == ToNodeType.dynamic) {
+      params[matched._paramName] = segments[0];
+    } else if (matched._paramType == ToNodeType.dynamicAll) {
+      // /[...file]/history
+      // /x/y.dart/history
+      params[matched._paramName] = !params.containsKey(matched._paramName)
+          ? segments[0]
+          : path_.join(params[matched._paramName]!, segments[0]);
+    } else {
+      throw AssertionError("not here _paramType:${matched._paramType}");
+    }
+
+    if (segments.length == 1) {
+      return MatchTo(uri: uri, to: matched, params: params);
+    }
+
+    return matched._match(uri: uri, segments: segments.sublist(1), params: params);
+  }
 
   List<To> toList({
     bool includeThis = true,
@@ -228,8 +247,9 @@ class To {
     return includeThis ? [this, ...flatChildren] : flatChildren;
   }
 
-  /// parse("[...users]")
-  ///      -> (part:'users',type:ToNodeType.dynamicAll)
+  /// parse("user")       -->  (name:"user",type:ToNodeType.normal)
+  /// parse("[id]")       -->  (name:"id",  type:ToNodeType.dynamic)
+  /// parse("[...path]")  -->  (name:"path",type:ToNodeType.dynamicAll)
   static (String, ToNodeType) _parse(String pattern) {
     assert(pattern.isNotEmpty);
 
@@ -251,26 +271,18 @@ class To {
     }
   }
 
-  String toPartString() {
-    return switch (type) {
-      ToNodeType.dynamic => "[$part]",
-      ToNodeType.dynamicAll => "[...$part]",
-      _ => part,
-    };
-  }
-
   @override
   String toString({bool deep = false}) {
-    if (!deep) return "<Route name='$match' routes=[${children.length}]/>";
+    if (!deep) return "<Route part='$part' children.length=${children.length} />";
     return _toStringDeep(level: 0);
   }
 
   String _toStringDeep({int level = 0}) {
     if (children.isEmpty) {
-      return "${"  " * level}<Route name='${match}'/>";
+      return "${"  " * level}<Route part='$part'/>";
     }
 
-    return '''${"  " * level}<Route name='$match'>
+    return '''${"  " * level}<Route part='$part'>
 ${children.map((e) => e._toStringDeep(level: level + 1)).join("\n")}
 ${"  " * level}</Route>''';
   }
@@ -320,7 +332,8 @@ class _RouteInformationParser extends RouteInformationParser<ToUri> {
   }
 }
 
-class _RouterDelegate extends RouterDelegate<RouteInformation> with ChangeNotifier, PopNavigatorRouterDelegateMixin<RouteInformation> {
+class _RouterDelegate extends RouterDelegate<RouteInformation>
+    with ChangeNotifier, PopNavigatorRouterDelegateMixin<RouteInformation> {
   _RouterDelegate({
     required this.router,
     required Temp_Screen initial,
@@ -333,7 +346,8 @@ class _RouterDelegate extends RouterDelegate<RouteInformation> with ChangeNotifi
   final Temp_Navigable _navigable;
 
   @override
-  final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>(debugLabel: "myNavigator");
+  final GlobalKey<NavigatorState> navigatorKey =
+      GlobalKey<NavigatorState>(debugLabel: "myNavigator");
 
   @override
   Future<void> setNewRoutePath(RouteInformation configuration) {
