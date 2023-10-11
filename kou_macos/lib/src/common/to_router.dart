@@ -43,8 +43,10 @@ class RouteState {}
 
 class ToRouter {
   To root;
+
+  // todo how to setup default router
   static final To defaultNotFound =
-      To("/404", page: (context, state) => const Text("404 not found"));
+      To("404", page: (context, state) => const Text("404 not found"));
 
   ToRouter({required this.root}) : assert(root.part == "/");
 
@@ -53,7 +55,9 @@ class ToRouter {
     assert(result != null, "应把ToRouter配置到您的App中: MaterialApp.router(routerConfig:ToRouter(...))");
     return result!.router;
   }
+
   MatchTo matchUri(Uri uri) {
+    assert(uri.path.startsWith("/"));
     if (uri.path == "/") return MatchTo(uri: uri, to: root);
 
     Map<String, String> params = {};
@@ -162,7 +166,7 @@ class To {
     this.page,
     this.children = const [],
   })  : assert(children.isNotEmpty || page != null),
-        assert(part == "/" || !part.contains("/")) {
+        assert(part == "/" || !part.contains("/"), "part:'$part' assert fail") {
     var parsed = _parse(part);
     _paramName = parsed.$1;
     _paramType = parsed.$2;
@@ -199,7 +203,51 @@ class To {
     return null;
   }
 
-  MatchTo _match(
+  MatchTo _match({
+    required Uri uri,
+    required List<String> segments,
+    required Map<String, String> params,
+  }) {
+    assert(segments.isNotEmpty);
+
+    var [next, ...rest] = segments;
+
+    To? matchedNext = _matchChild(segment: next);
+    if (matchedNext == null) {
+      // next=="" 代表最后以 '/' 结尾
+      if (_paramType == ToNodeType.static && next == "") {
+        return MatchTo(uri: uri, to: this, params: params);
+      }
+      return MatchTo(uri: uri, to: ToRouter.defaultNotFound, params: params);
+    }
+
+    if (matchedNext._paramType == ToNodeType.static) {
+      // if(rest.length==1 && rest.first=="") {
+      //   return MatchTo(uri: uri, to: matchedNext, params: params);
+      // }
+    } else if (matchedNext._paramType == ToNodeType.dynamic) {
+      params[matchedNext._paramName] = next;
+    } else if (matchedNext._paramType == ToNodeType.dynamicAll) {
+      // /tree/[...file]
+      //     /tree/x/y   --> {"file":"x/y"}
+      //     /tree/x/y/  --> {"file":"x/y/"}
+      // dynamicAll param must be last
+      if (uri.path.endsWith("/")) {
+        params[matchedNext._paramName] = "${rest.join("/")}/";
+      } else {
+        params[matchedNext._paramName] = rest.join("/");
+      }
+      return MatchTo(uri: uri, to: matchedNext, params: params);
+    }
+
+    if (rest.isEmpty) {
+      return MatchTo(uri: uri, to: matchedNext, params: params);
+    }
+
+    return matchedNext._match(uri: uri, segments: rest, params: params);
+  }
+
+  MatchTo _match2(
       {required Uri uri, required List<String> segments, required Map<String, String> params}) {
     assert(segments.isNotEmpty);
 
@@ -216,8 +264,6 @@ class To {
       params[matched._paramName] = !params.containsKey(matched._paramName)
           ? segments[0]
           : path_.join(params[matched._paramName]!, segments[0]);
-    } else {
-      throw AssertionError("not here _paramType:${matched._paramType}");
     }
 
     if (segments.length == 1) {
@@ -273,16 +319,16 @@ class To {
 
   @override
   String toString({bool deep = false}) {
-    if (!deep) return "<Route part='$part' children.length=${children.length} />";
+    if (!deep) return "<Route path='$path' children.length=${children.length} />";
     return _toStringDeep(level: 0);
   }
 
   String _toStringDeep({int level = 0}) {
     if (children.isEmpty) {
-      return "${"  " * level}<Route part='$part'/>";
+      return "${"  " * level}<Route path='$path' />";
     }
 
-    return '''${"  " * level}<Route part='$part'>
+    return '''${"  " * level}<Route path='$path' >
 ${children.map((e) => e._toStringDeep(level: level + 1)).join("\n")}
 ${"  " * level}</Route>''';
   }

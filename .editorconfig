@@ -3,9 +3,19 @@ root = true
 [*]
 charset = utf-8
 end_of_line = lf
-indent_size = 2
 indent_style = space
 insert_final_newline = false
 max_line_length = 100
 tab_width = 4
 trim_trailing_whitespace=true
+
+# ui code need more length, reduce ui nest level
+
+[*.dart]
+indent_size = 2
+
+[*.widget.dart]
+max_line_length = 200
+
+[*_test.dart]
+max_line_length = 130

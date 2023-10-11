@@ -8,6 +8,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kou_macos/src/common/to_router.dart';
+import 'package:path/path.dart' as path;
 
 LayoutMixin layout(BuildContext context) {
   return const TestRootLayout();
@@ -28,7 +29,9 @@ void main() {
     var router = ToRouter(
         root: To("/", page: page, children: [
       To("settings", page: page, children: [
-        To("profile", page: page),
+        To("profile", page: page, children: [
+          To("emails", page: page),
+        ]),
         To("[dynamic]", page: page),
       ]),
       To("[user]", page: page, children: [
@@ -53,11 +56,15 @@ void main() {
 
     test('static', () {
       match("/", expected: (matched: "/", params: {}));
-      match("/settings", expected: (matched: "/settings", params: {}));
-      match("/settings/profile", expected: (matched: "/settings/profile", params: {}));
 
-      /// static 目录名 优先级高于 dynamic 目录名，同级中既有动态又有静态目录名时，优先匹配static
-      match("/settings/dynamic_x", expected: (matched: "/settings/[dynamic]", params: {"dynamic": "dynamic_x"}));
+      match("/settings", expected: (matched: "/settings", params: {}));
+      match("/settings/", expected: (matched: "/settings/[dynamic]", params: {"dynamic": ""}));
+
+      match("/settings/profile", expected: (matched: "/settings/profile", params: {}));
+      match("/settings/profile/", expected: (matched: "/settings/profile", params: {}));
+
+      match("/settings/profile/emails", expected: (matched: "/settings/profile/emails", params: {}));
+      match("/settings/profile/emails/", expected: (matched: "/settings/profile/emails", params: {}));
     });
 
     test('dynamic', () {
@@ -72,15 +79,17 @@ void main() {
           expected: (matched: "/[user]/[repository]/issues", params: {"user": "flutter", "repository": "packages"}));
     });
 
-    test('dynamicAll', skip: true, () {
-      match("/flutter/packages/tree/a/b/c.dart", expected: (
-        matched: "/[user]/[repository]/tree/[...file]",
-        params: {"user": "flutter", "repository": "packages", "file": "a/b/c.dart"}
+    test('dynamicAll', () {
+      match("/flutter/packages/tree/master/b/c.dart", expected: (
+        matched: "/[user]/[repository]/tree/[branch]/[...file]",
+        params: {"user": "flutter", "repository": "packages", "file": "b/c.dart"}
       ));
-      match("/flutter/packages/tree/a/b/c.dart/history", expected: (
-        matched: "/[user]/[repository]/tree/[...file]/history",
-        params: {"user": "flutter", "repository": "packages", "file": "a/b/c.dart"}
-      ));
+    });
+
+    test('priority', () {
+      /// static 目录名 优先级高于 dynamic 目录名，同级中既有动态又有静态目录名时，优先匹配static
+      match("/settings/profile", expected: (matched: "/settings/profile", params: {}));
+      match("/settings/dynamic_x", expected: (matched: "/settings/[dynamic]", params: {"dynamic": "dynamic_x"}));
     });
 
     test('404 no_page_found', () {
@@ -125,6 +134,11 @@ void main() {
 
   group("ToRouter.go", () {
     test('ok', () {
+      expect(Uri.parse("https://a.com").path, equals(""));
+      expect(path.join("a", "/"), equals("/"));
+      var l = [""];
+      expect(l, [""]);
+
       // var to = router.parse("/");
       // expect(to.path,equals("expected"));
       // expect("/", router.match("/").path);
