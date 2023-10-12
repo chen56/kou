@@ -64,40 +64,6 @@ class ToRouter {
     return root._match(uri: uri, segments: uri.pathSegments, params: params);
   }
 
-  MatchTo matchUriV1(Uri uri) {
-    if (uri.path == "/") return MatchTo(uri: uri, to: root);
-
-    To? matched = root;
-    Map<String, String> params = {};
-
-    var segments = uri.pathSegments.iterator;
-    assert(segments.moveNext());
-
-    while (true) {
-      matched = matched!._matchChild(segment: segments.current);
-      if (matched == null) {
-        return MatchTo(uri: uri, to: defaultNotFound, params: params);
-      }
-      if (matched._paramType == ToNodeType.static) {
-        if (!segments.moveNext()) break;
-        continue;
-      } else if (matched._paramType == ToNodeType.dynamic) {
-        params[matched._paramName] = segments.current;
-        if (!segments.moveNext()) break;
-        continue;
-      } else if (matched._paramType == ToNodeType.dynamicAll) {
-        // /settings/[...key]/reset
-        // /settings/x/reset
-        params[matched._paramName] = !params.containsKey(matched._paramName)
-            ? segments.current
-            : path_.join(params[matched._paramName]!, segments.current);
-      } else {
-        throw AssertionError("not here _paramType:${matched._paramType}");
-      }
-    }
-    return MatchTo(uri: uri, to: matched, params: params);
-  }
-
   MatchTo match(String uri) {
     return matchUri(Uri.parse(uri));
   }
@@ -214,30 +180,27 @@ class To {
 
     To? matchedNext = _matchChild(segment: next);
     if (matchedNext == null) {
-      // next=="" 代表最后以 '/' 结尾
+      // next=="" 代表最后以 '/' 结尾,当前 segments==[""]
       if (_paramType == ToNodeType.static && next == "") {
         return MatchTo(uri: uri, to: this, params: params);
       }
       return MatchTo(uri: uri, to: ToRouter.defaultNotFound, params: params);
     }
 
-    if (matchedNext._paramType == ToNodeType.static) {
-      // if(rest.length==1 && rest.first=="") {
-      //   return MatchTo(uri: uri, to: matchedNext, params: params);
-      // }
-    } else if (matchedNext._paramType == ToNodeType.dynamic) {
-      params[matchedNext._paramName] = next;
-    } else if (matchedNext._paramType == ToNodeType.dynamicAll) {
+    if (matchedNext._paramType == ToNodeType.dynamicAll) {
       // /tree/[...file]
       //     /tree/x/y   --> {"file":"x/y"}
       //     /tree/x/y/  --> {"file":"x/y/"}
       // dynamicAll param must be last
-      if (uri.path.endsWith("/")) {
-        params[matchedNext._paramName] = "${rest.join("/")}/";
-      } else {
-        params[matchedNext._paramName] = rest.join("/");
-      }
+      params[matchedNext._paramName] = segments.join("/");
       return MatchTo(uri: uri, to: matchedNext, params: params);
+    } else {
+      if (next == "") {
+        return MatchTo(uri: uri, to: this, params: params);
+      }
+      if (matchedNext._paramType == ToNodeType.dynamic) {
+        params[matchedNext._paramName] = next;
+      }
     }
 
     if (rest.isEmpty) {
@@ -247,31 +210,7 @@ class To {
     return matchedNext._match(uri: uri, segments: rest, params: params);
   }
 
-  MatchTo _match2(
-      {required Uri uri, required List<String> segments, required Map<String, String> params}) {
-    assert(segments.isNotEmpty);
 
-    To? matched = _matchChild(segment: segments[0]);
-    if (matched == null) {
-      return MatchTo(uri: uri, to: ToRouter.defaultNotFound, params: params);
-    }
-
-    if (matched._paramType == ToNodeType.dynamic) {
-      params[matched._paramName] = segments[0];
-    } else if (matched._paramType == ToNodeType.dynamicAll) {
-      // /[...file]/history
-      // /x/y.dart/history
-      params[matched._paramName] = !params.containsKey(matched._paramName)
-          ? segments[0]
-          : path_.join(params[matched._paramName]!, segments[0]);
-    }
-
-    if (segments.length == 1) {
-      return MatchTo(uri: uri, to: matched, params: params);
-    }
-
-    return matched._match(uri: uri, segments: segments.sublist(1), params: params);
-  }
 
   List<To> toList({
     bool includeThis = true,

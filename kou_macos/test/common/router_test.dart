@@ -58,7 +58,7 @@ void main() {
       match("/", expected: (matched: "/", params: {}));
 
       match("/settings", expected: (matched: "/settings", params: {}));
-      match("/settings/", expected: (matched: "/settings/[dynamic]", params: {"dynamic": ""}));
+      match("/settings/", expected: (matched: "/settings", params: {}));
 
       match("/settings/profile", expected: (matched: "/settings/profile", params: {}));
       match("/settings/profile/", expected: (matched: "/settings/profile", params: {}));
@@ -69,20 +69,27 @@ void main() {
 
     test('dynamic', () {
       /// dynamic
-      match("/chen56/note", expected: (matched: "/[user]/[repository]", params: {"user": "chen56", "repository": "note"}));
       match("/flutter", expected: (matched: "/[user]", params: {"user": "flutter"}));
+      match("/flutter/", expected: (matched: "/[user]", params: {"user": "flutter"}));
       match("/flutter/flutter",
           expected: (matched: "/[user]/[repository]", params: {"user": "flutter", "repository": "flutter"}));
       match("/flutter/packages",
           expected: (matched: "/[user]/[repository]", params: {"user": "flutter", "repository": "packages"}));
       match("/flutter/packages/issues",
           expected: (matched: "/[user]/[repository]/issues", params: {"user": "flutter", "repository": "packages"}));
+
+      match("/chen56/note", expected: (matched: "/[user]/[repository]", params: {"user": "chen56", "repository": "note"}));
     });
 
     test('dynamicAll', () {
-      match("/flutter/packages/tree/master/b/c.dart", expected: (
+      match("/flutter/packages/tree/main/b/c.dart", expected: (
         matched: "/[user]/[repository]/tree/[branch]/[...file]",
-        params: {"user": "flutter", "repository": "packages", "file": "b/c.dart"}
+        params: {"user": "flutter", "repository": "packages", "branch": "main", "file": "b/c.dart"}
+      ));
+      // end with '/'
+      match("/flutter/packages/tree/main/b/c.dart/", expected: (
+        matched: "/[user]/[repository]/tree/[branch]/[...file]",
+        params: {"user": "flutter", "repository": "packages", "branch": "main", "file": "b/c.dart/"}
       ));
     });
 
