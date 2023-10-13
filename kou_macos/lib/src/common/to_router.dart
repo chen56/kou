@@ -31,12 +31,7 @@ import 'package:path/path.dart' as path_;
     我
  */
 
-mixin LayoutMixin on Widget {}
-
-typedef LayoutBuilder = LayoutMixin Function(BuildContext context);
-
-mixin RoutePageMixin on Widget {}
-
+typedef LayoutBuilder = Widget Function(BuildContext context);
 typedef PageBuilder = Widget Function(BuildContext context, RouteState state);
 
 class RouteState {}
@@ -44,11 +39,7 @@ class RouteState {}
 class ToRouter {
   To root;
 
-  // todo how to setup default router
-  static final To defaultNotFound =
-      To("404", page: (context, state) => const Text("404 not found"));
-
-  ToRouter({required this.root}) : assert(root.part == "/");
+  ToRouter({required this.root}) : assert(root.path == "/");
 
   static ToRouter of(BuildContext context) {
     var result = context.findAncestorWidgetOfExactType<_Navigator>();
@@ -58,7 +49,7 @@ class ToRouter {
 
   MatchTo matchUri(Uri uri) {
     assert(uri.path.startsWith("/"));
-    if (uri.path == "/") return MatchTo(uri: uri, to: root);
+    if (uri.path == "/") return MatchTo._(uri: uri, to: root);
 
     Map<String, String> params = {};
     return root._match(uri: uri, segments: uri.pathSegments, params: params);
@@ -67,15 +58,6 @@ class ToRouter {
   MatchTo match(String uri) {
     return matchUri(Uri.parse(uri));
   }
-
-// To match(Uri uri) {
-//   if (uri.path == "/") return root;
-//   To current = root;
-//   if (current.children.length == 1 && current.children.first.pathSegemntType == PathSegment.dynamic)
-//     for (var s in uri.pathSegments) {
-//       testFunction([1, 2]);
-//     }
-// }
 
 // static RouterConfig<RouteInformation> config() {
 //   return RouterConfig(
@@ -130,6 +112,7 @@ class To {
     this.layout,
     this.layoutRetry = LayoutRetry.none,
     this.page,
+    this.notFound,
     this.children = const [],
   })  : assert(children.isNotEmpty || page != null),
         assert(part == "/" || !part.contains("/"), "part:'$part' assert fail") {
@@ -149,6 +132,7 @@ class To {
   To? parent;
   final LayoutBuilder? layout;
   final PageBuilder? page;
+  final PageBuilder? notFound;
   final LayoutRetry layoutRetry;
   List<To> children;
 
@@ -178,13 +162,15 @@ class To {
 
     var [next, ...rest] = segments;
 
+    // 忽略后缀'/'
+    // next=="" 代表最后以 '/' 结尾,当前 segments==[""]
+    if (_paramType == ToNodeType.static && next == "") {
+      return MatchTo._(uri: uri, to: this, params: params);
+    }
+
     To? matchedNext = _matchChild(segment: next);
     if (matchedNext == null) {
-      // next=="" 代表最后以 '/' 结尾,当前 segments==[""]
-      if (_paramType == ToNodeType.static && next == "") {
-        return MatchTo(uri: uri, to: this, params: params);
-      }
-      return MatchTo(uri: uri, to: ToRouter.defaultNotFound, params: params);
+      return MatchTo._(uri: uri, to: this, params: params, isNotFound: true);
     }
 
     if (matchedNext._paramType == ToNodeType.dynamicAll) {
@@ -193,10 +179,10 @@ class To {
       //     /tree/x/y/  --> {"file":"x/y/"}
       // dynamicAll param must be last
       params[matchedNext._paramName] = segments.join("/");
-      return MatchTo(uri: uri, to: matchedNext, params: params);
+      return MatchTo._(uri: uri, to: matchedNext, params: params);
     } else {
       if (next == "") {
-        return MatchTo(uri: uri, to: this, params: params);
+        return MatchTo._(uri: uri, to: this, params: params);
       }
       if (matchedNext._paramType == ToNodeType.dynamic) {
         params[matchedNext._paramName] = next;
@@ -204,21 +190,19 @@ class To {
     }
 
     if (rest.isEmpty) {
-      return MatchTo(uri: uri, to: matchedNext, params: params);
+      return MatchTo._(uri: uri, to: matchedNext, params: params);
     }
 
     return matchedNext._match(uri: uri, segments: rest, params: params);
   }
 
-
-
   List<To> toList({
     bool includeThis = true,
-    bool Function(To path)? test,
+    bool Function(To path)? where,
     Comparator<To>? sortBy,
   }) {
-    test = test ?? (e) => true;
-    if (!test(this)) {
+    where = where ?? (e) => true;
+    if (!where(this)) {
       return [];
     }
     List<To> sorted = List.from(children);
@@ -227,7 +211,7 @@ class To {
     }
 
     var flatChildren = sorted.expand((child) {
-      return child.toList(includeThis: true, test: test, sortBy: sortBy);
+      return child.toList(includeThis: true, where: where, sortBy: sortBy);
     }).toList();
     return includeThis ? [this, ...flatChildren] : flatChildren;
   }
@@ -277,8 +261,9 @@ class MatchTo {
   final To to;
   final Uri uri;
   final Map<String, String> params;
+  final bool isNotFound;
 
-  MatchTo({required this.uri, required this.to, this.params = const {}});
+  MatchTo._({required this.uri, required this.to, this.params = const {}, this.isNotFound = false});
 }
 
 /// 主要用于存储 [router]，便于[ToRouter.of]
@@ -297,28 +282,28 @@ class _Navigator extends StatelessWidget {
   }
 }
 
-class ToUri {
+class _ToRouteInformation {
   final Uri uri;
 
-  ToUri({required this.uri});
+  _ToRouteInformation({required this.uri});
 }
 
-class _RouteInformationParser extends RouteInformationParser<ToUri> {
+class _RouteInformationParser extends RouteInformationParser<_ToRouteInformation> {
   _RouteInformationParser();
 
   @override
-  Future<ToUri> parseRouteInformation(RouteInformation routeInformation) {
-    return SynchronousFuture(ToUri(uri: routeInformation.uri));
+  Future<_ToRouteInformation> parseRouteInformation(RouteInformation routeInformation) {
+    return SynchronousFuture(_ToRouteInformation(uri: routeInformation.uri));
   }
 
   @override
-  RouteInformation? restoreRouteInformation(ToUri configuration) {
+  RouteInformation? restoreRouteInformation(_ToRouteInformation configuration) {
     return RouteInformation(uri: configuration.uri);
   }
 }
 
-class _RouterDelegate extends RouterDelegate<RouteInformation>
-    with ChangeNotifier, PopNavigatorRouterDelegateMixin<RouteInformation> {
+class _RouterDelegate extends RouterDelegate<_ToRouteInformation>
+    with ChangeNotifier, PopNavigatorRouterDelegateMixin<_ToRouteInformation> {
   _RouterDelegate({
     required this.router,
     required Temp_Screen initial,
@@ -335,7 +320,7 @@ class _RouterDelegate extends RouterDelegate<RouteInformation>
       GlobalKey<NavigatorState>(debugLabel: "myNavigator");
 
   @override
-  Future<void> setNewRoutePath(RouteInformation configuration) {
+  Future<void> setNewRoutePath(_ToRouteInformation configuration) {
     _push(configuration.uri.toString());
     return SynchronousFuture(null);
   }
@@ -355,14 +340,14 @@ class _RouterDelegate extends RouterDelegate<RouteInformation>
   }
 
   @override
-  Future<void> setRestoredRoutePath(RouteInformation configuration) {
+  Future<void> setRestoredRoutePath(_ToRouteInformation configuration) {
     return setNewRoutePath(configuration);
   }
 
   @override
-  RouteInformation? get currentConfiguration {
+  _ToRouteInformation? get currentConfiguration {
     if (_pages.isEmpty) return null;
-    return RouteInformation(uri: Uri.parse(_pages.last.name ?? "/"));
+    return _ToRouteInformation(uri: Uri.parse(_pages.last.name ?? "/"));
   }
 
   Widget _build(BuildContext context) {

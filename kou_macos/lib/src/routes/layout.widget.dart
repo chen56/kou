@@ -1,12 +1,10 @@
-
-
 import 'package:flutter/material.dart';
-import 'package:kou_macos/src/common/to_router.dart';
 
-LayoutMixin layout(BuildContext context){
-    return const Layout();
+Widget layout(BuildContext context) {
+  return const Layout();
 }
-class Layout extends StatelessWidget with LayoutMixin{
+
+class Layout extends StatelessWidget {
   const Layout({super.key});
 
   @override
@@ -33,7 +31,7 @@ class Layout extends StatelessWidget with LayoutMixin{
       primary: true,
       // content...
       appBar: AppBar(toolbarHeight: 30, title: const Text("widget.title")),
-      floatingActionButton: FloatingActionButton(onPressed: (){}, tooltip: 'Increment', child: const Icon(Icons.add)),
+      floatingActionButton: FloatingActionButton(onPressed: () {}, tooltip: 'Increment', child: const Icon(Icons.add)),
       body: Row(
         children: [
           Drawer(
@@ -58,5 +56,4 @@ class Layout extends StatelessWidget with LayoutMixin{
     );
     return scaffold;
   }
-
 }

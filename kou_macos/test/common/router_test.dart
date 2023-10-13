@@ -8,40 +8,23 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kou_macos/src/common/to_router.dart';
-import 'package:path/path.dart' as path;
 
-LayoutMixin layout(BuildContext context) {
-  return const TestRootLayout();
-}
+Widget page(BuildContext context, RouteState state) => Text("page $state");
 
-class TestRootLayout extends StatelessWidget with LayoutMixin {
-  const TestRootLayout({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const Scaffold(body: Row(children: [Text("layout: /")]));
-  }
-}
+Widget notFound(BuildContext context, RouteState state) => const Text("404 not found");
 
 void main() {
   group("ToRouter.parse", () {
-    page(BuildContext context, RouteState state) => const Text("/");
     var router = ToRouter(
         root: To("/", page: page, children: [
       To("settings", page: page, children: [
-        To("profile", page: page, children: [
-          To("emails", page: page),
-        ]),
-        To("[dynamic]", page: page),
+        To("profile", page: page),
       ]),
       To("[user]", page: page, children: [
         To("[repository]", page: page, children: [
-          To("issues", page: page),
           To("tree", /* no page */ children: [
             To("[branch]", page: page, children: [
-              To("[...file]", page: page, children: [
-                To("history", page: page),
-              ]),
+              To("[...file]", page: page),
             ]),
           ]),
         ]),
@@ -58,27 +41,32 @@ void main() {
       match("/", expected: (matched: "/", params: {}));
 
       match("/settings", expected: (matched: "/settings", params: {}));
+      // end with '/'
       match("/settings/", expected: (matched: "/settings", params: {}));
 
       match("/settings/profile", expected: (matched: "/settings/profile", params: {}));
+      // end with '/'
       match("/settings/profile/", expected: (matched: "/settings/profile", params: {}));
-
-      match("/settings/profile/emails", expected: (matched: "/settings/profile/emails", params: {}));
-      match("/settings/profile/emails/", expected: (matched: "/settings/profile/emails", params: {}));
     });
 
     test('dynamic', () {
       /// dynamic
       match("/flutter", expected: (matched: "/[user]", params: {"user": "flutter"}));
+      // end with '/'
       match("/flutter/", expected: (matched: "/[user]", params: {"user": "flutter"}));
+
       match("/flutter/flutter",
           expected: (matched: "/[user]/[repository]", params: {"user": "flutter", "repository": "flutter"}));
       match("/flutter/packages",
           expected: (matched: "/[user]/[repository]", params: {"user": "flutter", "repository": "packages"}));
-      match("/flutter/packages/issues",
-          expected: (matched: "/[user]/[repository]/issues", params: {"user": "flutter", "repository": "packages"}));
 
-      match("/chen56/note", expected: (matched: "/[user]/[repository]", params: {"user": "chen56", "repository": "note"}));
+      match("/flutter/packages/tree",
+          expected: (matched: "/[user]/[repository]/tree", params: {"user": "flutter", "repository": "packages"}));
+
+      match("/flutter/packages/tree/main", expected: (
+        matched: "/[user]/[repository]/tree/[branch]",
+        params: {"user": "flutter", "repository": "packages", "branch": "main"}
+      ));
     });
 
     test('dynamicAll', () {
@@ -95,60 +83,33 @@ void main() {
 
     test('priority', () {
       /// static 目录名 优先级高于 dynamic 目录名，同级中既有动态又有静态目录名时，优先匹配static
-      match("/settings/profile", expected: (matched: "/settings/profile", params: {}));
-      match("/settings/dynamic_x", expected: (matched: "/settings/[dynamic]", params: {"dynamic": "dynamic_x"}));
-    });
-
-    test('404 no_page_found', () {
-      // no page not found
-      // match("/flutter/packages/tree",
-      //     expected: (matched: "/[user]/[repository]", params: {"user": "flutter", "repository": "packages"}));
+      match("/settings", expected: (matched: "/settings", params: {}));
+      match("/chen56", expected: (matched: "/[user]", params: {"user": "chen56"}));
     });
   });
-  //
-  // group("ToPathSegment.parse", () {
-  //   test('ok', () {
-  //     var tests = [
-  //       (node: "a", expected: (_paramName: "a", _paramType: ToNodeType.static)),
-  //       (node: "[id]", expected: (_paramName: "id", _paramType: ToNodeType.dynamic)),
-  //       (node: "[...files]", expected: (_paramName: "files", _paramType: ToNodeType.dynamicAll)),
-  //     ];
-  //
-  //     for (var t in tests) {
-  //       var result = ToNode.parse(t.node);
-  //       expect(result.part, equals(t.expected._paramName), reason: "test:$t");
-  //       expect(result.type, equals(t.expected._paramType), reason: "test:$t");
-  //     }
-  //   });
-  //
-  //   test('error', () {
-  //     //error arg
-  //     try {
-  //       ToNode.parse("[]");
-  //       fail("not here");
-  //     } catch (e) {
-  //       expect(e.toString(), contains("""'name != "[]"': is not true"""));
-  //     }
-  //
-  //     try {
-  //       ToNode.parse("[...]");
-  //       fail("not here");
-  //     } catch (e) {
-  //       expect(e.toString(), contains("""'name != "[...]"': is not true"""));
-  //     }
-  //   });
-  // });
+  group("ToRouter.parse 404", () {
+    var router = ToRouter(
+      root: To("/", page: page, notFound: notFound, children: [
+        To("settings", page: page, notFound: notFound, children: [
+          To("profile", page: page),
+        ]),
+      ]),
+    );
 
-  group("ToRouter.go", () {
-    test('ok', () {
-      expect(Uri.parse("https://a.com").path, equals(""));
-      expect(path.join("a", "/"), equals("/"));
-      var l = [""];
-      expect(l, [""]);
+    void match(String path, {required String matched, required Map<String, String> params, bool notFound = false}) {
+      var match = router.match(path);
+      expect(match.to.path, equals(matched));
+      expect(match.params, equals(params));
+      expect(match.isNotFound, equals(notFound));
+    }
 
-      // var to = router.parse("/");
-      // expect(to.path,equals("expected"));
-      // expect("/", router.match("/").path);
+    test('404 no_page_found', () {
+      // found
+      match("/settings", matched: "/settings", params: {}, notFound: false);
+      match("/settings/profile", matched: "/settings/profile", params: {}, notFound: false);
+      // notFound
+      match("/no_exists_path", matched: "/", params: {}, notFound: true);
+      match("/settings/no_exists_path", matched: "/settings", params: {}, notFound: true);
     });
   });
 }
