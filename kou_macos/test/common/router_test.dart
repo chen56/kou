@@ -14,7 +14,7 @@ Widget page(BuildContext context, RouteState state) => Text("page $state");
 Widget notFound(BuildContext context, RouteState state) => const Text("404 not found");
 
 void main() {
-  group("ToRouter.parse", () {
+  group("ToRouter.parse ok", () {
     var router = ToRouter(
         root: To("/", page: page, children: [
       To("settings", page: page, children: [
