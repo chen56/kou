@@ -1,32 +1,38 @@
 import 'package:flutter/material.dart';
+import 'package:kou_macos/src/common/to_router.dart';
+import 'package:kou_macos/src/routes.dart';
 
-Widget layout(BuildContext context) {
-  return const Layout();
+Widget layout(BuildContext context,RouteState state, Widget content) {
+  return Layout(content: content);
 }
 
 class Layout extends StatelessWidget {
-  const Layout({super.key});
+  Widget content;
+
+  Layout({super.key, required this.content});
 
   @override
   Widget build(BuildContext context) {
-    Widget link(String title, IconData icon) {
+    Widget link(String title,Uri uri, IconData icon) {
       return MaterialButton(
           minWidth: double.infinity, // fill drawer space
           height: 46,
-          onPressed: () {},
+          onPressed: () {
+            // context.to(Tos.root);
+          },
           // ...children...
           child: Align(alignment: Alignment.centerLeft, child: Text(title)));
     }
 
-    var content = const Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        // ...children...
-        children: <Widget>[
-          Text('You have pushed the button this many times:'),
-        ],
-      ),
-    );
+    // var content = const Center(
+    //   child: Column(
+    //     mainAxisAlignment: MainAxisAlignment.center,
+    //     // ...children
+    //     children: <Widget>[
+    //       Text('You have pushed the button this many times:'),
+    //     ],
+    //   ),
+    // );
     var scaffold = Scaffold(
       primary: true,
       // content...
@@ -39,11 +45,11 @@ class Layout extends StatelessWidget {
             child: ListView(
               scrollDirection: Axis.vertical,
               children: [
-                link("︎︎︎▶ dashboard", Icons.abc),
-                link("︎︎︎▶ 腾讯云", Icons.abc),
-                link("  ︎︎︎▶ 香港", Icons.abc),
-                link("  ︎︎︎  ■ df webui", Icons.abc),
-                link("  ︎︎︎  ■ out service${DateTime.now()}", Icons.abc),
+                link("︎︎︎▶ dashboard",Uri.parse("/dashboard"), Icons.abc),
+                link("︎︎︎▶ 腾讯云",Uri.parse("/tencent_cloud"), Icons.abc),
+                link("  ︎︎︎▶ 香港", Uri.parse("/tencent_cloud"),Icons.abc),
+                link("  ︎︎︎  ■ df webui",Uri.parse("/apps/df-webui"), Icons.abc),
+                link("  ︎︎︎  ■ out service${DateTime.now()}",Uri.parse("/apps/out"), Icons.abc),
               ],
             ),
           ),

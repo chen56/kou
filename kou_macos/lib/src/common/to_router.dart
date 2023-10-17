@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:kou_macos/src/common/log.dart';
 import 'package:path/path.dart' as path_;
 
 /*
@@ -31,7 +32,7 @@ import 'package:path/path.dart' as path_;
     我
  */
 
-typedef LayoutBuilder = Widget Function(BuildContext context);
+typedef LayoutBuilder = Widget Function(BuildContext context, RouteState state, Widget content);
 typedef PageBuilder = Widget Function(BuildContext context, RouteState state);
 
 class RouteState {}
@@ -42,7 +43,7 @@ class ToRouter {
   ToRouter({required this.root}) : assert(root.path == "/");
 
   static ToRouter of(BuildContext context) {
-    var result = context.findAncestorWidgetOfExactType<_Navigator>();
+    var result = context.findAncestorWidgetOfExactType<_RouterScope>();
     assert(result != null, "应把ToRouter配置到您的App中: MaterialApp.router(routerConfig:ToRouter(...))");
     return result!.router;
   }
@@ -59,22 +60,36 @@ class ToRouter {
     return matchUri(Uri.parse(uri));
   }
 
-// static RouterConfig<RouteInformation> config() {
-//   return RouterConfig(
-//     routeInformationProvider: PlatformRouteInformationProvider(
-//       initialRouteInformation: RouteInformation(
-//         uri: Uri.parse("/"),
-//       ),
-//     ),
-//     routerDelegate: LoggableRouterDelegate(
-//         logger: logger,
-//         delegate: _MyRouterDelegate(
-//           initial: navigable.initial,
-//           navigable: navigable,
-//         )),
-//     routeInformationParser: _Parser(),
-//   );
-// }
+  /// must exist uri
+  To getUri(Uri uri){
+    To result = root;
+    for (var segment in uri.pathSegments.where((e) => e != "")) {
+      result = result.children.where((e) => e.part==segment).first;
+    }
+    return result;
+  }
+
+  To get(String uri){
+    return getUri(Uri.parse(uri));
+  }
+
+  // [PlatformRouteInformationProvider.initialRouteInformation]
+  RouterConfig<Object> config({required Uri initial}) {
+    return RouterConfig<Object>(
+      routeInformationProvider: PlatformRouteInformationProvider(
+        initialRouteInformation: RouteInformation(
+          uri: initial,
+        ),
+      ),
+      routerDelegate: LoggableRouterDelegate(
+          logger: logger,
+          delegate: _RouterDelegate(
+            navigatorKey: GlobalKey<NavigatorState>(debugLabel: "myNavigator"),
+            router: this,
+          )),
+      routeInformationParser: _RouteInformationParser(router: this),
+    );
+  }
 }
 
 /// Layout失败重试策略
@@ -109,19 +124,22 @@ enum ToNodeType {
 class To {
   To(
     this.part, {
-    this.layout,
+    LayoutBuilder? layout,
     this.layoutRetry = LayoutRetry.none,
-    this.page,
-    this.notFound,
+    PageBuilder? page,
+    PageBuilder? notFound,
     this.children = const [],
   })  : assert(children.isNotEmpty || page != null),
-        assert(part == "/" || !part.contains("/"), "part:'$part' assert fail") {
+        assert(part == "/" || !part.contains("/"), "part:'$part' assert fail"),
+        _page = page,
+        _layout = layout,
+        _notFound = notFound {
     var parsed = _parse(part);
     _paramName = parsed.$1;
     _paramType = parsed.$2;
 
     for (var route in children) {
-      route.parent = this;
+      route._parent = this;
     }
   }
 
@@ -129,16 +147,20 @@ class To {
   late final String _paramName;
   late final ToNodeType _paramType;
 
-  To? parent;
-  final LayoutBuilder? layout;
-  final PageBuilder? page;
-  final PageBuilder? notFound;
+  To? _parent;
+  final LayoutBuilder? _layout;
+  final PageBuilder? _page;
+  final PageBuilder? _notFound;
   final LayoutRetry layoutRetry;
-  List<To> children;
+  final List<To> children;
 
-  bool get isRoot => parent == null;
+  bool get isRoot => _parent == null;
 
-  String get path => isRoot ? "/" : path_.join(parent!.path, part);
+  String get path => isRoot ? "/" : path_.join(_parent!.path, part);
+
+  List<To> get ancestors => isRoot ? [] : [_parent!, ..._parent!.ancestors];
+
+  List<To> get meAndAncestors => [this, ...ancestors];
 
   To? _matchChild({required String segment}) {
     To? matched = children
@@ -194,6 +216,21 @@ class To {
     }
 
     return matchedNext._match(uri: uri, segments: rest, params: params);
+  }
+
+  Widget buildPageContent(BuildContext context) {
+    return _page!(context, RouteState());
+  }
+
+  Widget build(BuildContext context) {
+    var state = RouteState();
+    var content = _page!(context, state);
+    for (var to in meAndAncestors) {
+      if (to._layout != null) {
+        content = to._layout!(context, state, content);
+      }
+    }
+    return content;
   }
 
   List<To> toList({
@@ -266,9 +303,10 @@ class MatchTo {
   MatchTo._({required this.uri, required this.to, this.params = const {}, this.isNotFound = false});
 }
 
-/// 主要用于存储 [router]，便于[ToRouter.of]
-class _Navigator extends StatelessWidget {
-  const _Navigator({
+/// this class only use for store  [router] ,
+/// ref: [ToRouter.of]
+class _RouterScope extends StatelessWidget {
+  const _RouterScope({
     required this.router,
     required this.builder,
   });
@@ -283,17 +321,22 @@ class _Navigator extends StatelessWidget {
 }
 
 class _ToRouteInformation {
-  final Uri uri;
+  final MatchTo matched;
 
-  _ToRouteInformation({required this.uri});
+  _ToRouteInformation({required this.matched});
+
+  get uri => matched.uri;
 }
 
 class _RouteInformationParser extends RouteInformationParser<_ToRouteInformation> {
-  _RouteInformationParser();
+  final ToRouter router;
+
+  _RouteInformationParser({required this.router});
 
   @override
   Future<_ToRouteInformation> parseRouteInformation(RouteInformation routeInformation) {
-    return SynchronousFuture(_ToRouteInformation(uri: routeInformation.uri));
+    MatchTo matchTo = router.matchUri(routeInformation.uri);
+    return SynchronousFuture(_ToRouteInformation(matched: matchTo));
   }
 
   @override
@@ -304,39 +347,21 @@ class _RouteInformationParser extends RouteInformationParser<_ToRouteInformation
 
 class _RouterDelegate extends RouterDelegate<_ToRouteInformation>
     with ChangeNotifier, PopNavigatorRouterDelegateMixin<_ToRouteInformation> {
-  _RouterDelegate({
-    required this.router,
-    required Temp_Screen initial,
-    required Temp_Navigable navigable,
-  })  : _pages = List.from([initial._page], growable: true),
-        _navigable = navigable;
-
   final ToRouter router;
-  final List<_Page> _pages;
-  final Temp_Navigable _navigable;
+  final List<_ToRouteInformation> stack;
 
   @override
-  final GlobalKey<NavigatorState> navigatorKey =
-      GlobalKey<NavigatorState>(debugLabel: "myNavigator");
+  final GlobalKey<NavigatorState> navigatorKey;
+
+  _RouterDelegate({
+    required this.router,
+    required this.navigatorKey,
+  }) : stack = [];
 
   @override
   Future<void> setNewRoutePath(_ToRouteInformation configuration) {
-    _push(configuration.uri.toString());
+    stack.add(configuration);
     return SynchronousFuture(null);
-  }
-
-  Future<R?> _push<R>(String location) {
-    Temp_Screen screen = _navigable.switchTo(location);
-    _Page page = screen._page;
-//把completer的完成指责放权给各Screen后，框架需监听其完成后删除Page
-//并在onPopPage后
-    page.completer.future.whenComplete(() {
-      _pages.remove(page);
-      notifyListeners();
-    });
-    _pages.add(page);
-    notifyListeners();
-    return page.completer.future as Future<R?>;
   }
 
   @override
@@ -346,8 +371,7 @@ class _RouterDelegate extends RouterDelegate<_ToRouteInformation>
 
   @override
   _ToRouteInformation? get currentConfiguration {
-    if (_pages.isEmpty) return null;
-    return _ToRouteInformation(uri: Uri.parse(_pages.last.name ?? "/"));
+    return stack.isEmpty ? null : stack.last;
   }
 
   Widget _build(BuildContext context) {
@@ -357,67 +381,26 @@ class _RouterDelegate extends RouterDelegate<_ToRouteInformation>
         if (!route.didPop(result)) {
           return false;
         }
-        if (_pages.isEmpty) {
+        if (stack.isEmpty) {
           return true;
         }
-        var page = _pages.removeLast();
-//把completer的完成指责放权给各Screen自己后，
-//如果由系统back button触发onPopPage，框架应使completer完成，要不会泄露Future
-        if (!page.completer.isCompleted) {
-          page.completer.complete(null);
-        }
+        stack.removeLast();
         notifyListeners();
         return true;
       },
-//!!! toList()非常重要! 如果传入的pages是同一个ref，flutter会认为无变化
-      pages: _pages.toList(),
+      pages: stack
+          .map((e) => MaterialPage(key: ValueKey(pageKeyGen++), child: e.matched.to.build(context)))
+          .toList(),
     );
   }
 
+  static int pageKeyGen = 0;
+
   @override
   Widget build(BuildContext context) {
-    return _Navigator(
+    return _RouterScope(
       builder: _build,
       router: router,
     );
   }
-}
-
-/// A: Screen参数类型，R: push返回值类型
-class _Page<R> extends MaterialPage<R> {
-  _Page({required super.name, required super.child}) : super(key: ValueKey(keyGen++));
-
-  @protected
-  final Completer<R?> completer = Completer();
-
-  static int keyGen = 0;
-}
-
-/// A: Screen参数类型，R: push返回值类型
-mixin Temp_Screen<R> on Widget {
-  @protected
-  late final _Page<R> _page = _Page(name: location, child: this);
-
-  @protected
-  String get location;
-
-  @protected
-  Uri get uri => Uri.parse(location);
-
-  // @protected
-  // Future<R?> push(BuildContext context) {
-  //   return _ToNavigator.of(context).push<R>(location.toString());
-  // }
-
-  @override
-  String toStringShort() {
-    return "Screen(${_page.name})";
-  }
-}
-
-/// navigator_v2.dart 是更初级的包，用此类隔离其他包的依赖性
-mixin Temp_Navigable {
-  Temp_Screen get initial;
-
-  Temp_Screen switchTo(String location);
 }

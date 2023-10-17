@@ -12,24 +12,22 @@ class App extends StatefulWidget {
 }
 
 class _AppState extends State<App> {
-  final ToRouter goConfig = createRouter();
+  final ToRouter router = createRouter();
 
   @override
   void initState() {
     super.initState();
-
   }
+
   @override
   Widget build(BuildContext context) {
-
-    return MaterialApp(
+    var app = MaterialApp.router(
       title: 'kou cloud app manage',
-
       // dart or light follow system preferences
       theme: ThemeData(colorScheme: const ColorScheme.light(), useMaterial3: true),
       darkTheme: ThemeData(colorScheme: const ColorScheme.dark(), useMaterial3: true),
-
-      home: const Text( 'kou cloud app manage'),
+      routerConfig: router.config(initial: Uri.parse("/")),
     );
+    return app;
   }
 }
