@@ -35,6 +35,16 @@ import 'package:path/path.dart' as path_;
 typedef LayoutBuilder = Widget Function(BuildContext context, RouteState state, Widget content);
 typedef PageBuilder = Widget Function(BuildContext context, RouteState state);
 
+class RouteInstance {
+  final Uri uri;
+
+  RouteInstance({required this.uri});
+
+  Uri uriJoin(String child) {
+    return uri.replace(path: [...uri.pathSegments, child].join("/"));
+  }
+}
+
 class RouteState {}
 
 class ToRouter {
@@ -61,15 +71,15 @@ class ToRouter {
   }
 
   /// must exist uri
-  To getUri(Uri uri){
+  To getUri(Uri uri) {
     To result = root;
     for (var segment in uri.pathSegments.where((e) => e != "")) {
-      result = result.children.where((e) => e.part==segment).first;
+      result = result.children.where((e) => e.part == segment).first;
     }
     return result;
   }
 
-  To get(String uri){
+  To get(String uri) {
     return getUri(Uri.parse(uri));
   }
 

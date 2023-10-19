@@ -26,7 +26,7 @@ class _AppState extends State<App> {
       // dart or light follow system preferences
       theme: ThemeData(colorScheme: const ColorScheme.light(), useMaterial3: true),
       darkTheme: ThemeData(colorScheme: const ColorScheme.dark(), useMaterial3: true),
-      routerConfig: router.config(initial: Uri.parse("/")),
+      routerConfig: router.config(initial: rootRoute.uri),
     );
     return app;
   }

@@ -45,8 +45,8 @@ class Layout extends StatelessWidget {
             child: ListView(
               scrollDirection: Axis.vertical,
               children: [
-                link("︎︎︎▶ dashboard",Uri.parse("/dashboard"), Icons.abc),
-                link("︎︎︎▶ 腾讯云",Uri.parse("/tencent_cloud"), Icons.abc),
+                link("︎︎︎▶ dashboard", rootRoute.uri, Icons.abc),
+                link("︎︎︎▶ 腾讯云", rootRoute.tencent_cloud.uri, Icons.abc),
                 link("  ︎︎︎▶ 香港", Uri.parse("/tencent_cloud"),Icons.abc),
                 link("  ︎︎︎  ■ df webui",Uri.parse("/apps/df-webui"), Icons.abc),
                 link("  ︎︎︎  ■ out service${DateTime.now()}",Uri.parse("/apps/out"), Icons.abc),
