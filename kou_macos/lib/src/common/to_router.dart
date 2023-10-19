@@ -9,10 +9,11 @@ import 'package:path/path.dart' as path_;
 ## 用例：聊天窗口在
   手机屏：push新page
   桌面屏：层级展示（没有push新page）
+  旷世难题：通过route 的tree配置，而不是push等接口来决定是否增加page栈
 ### 方案1:
 /
   main layout:MainWindowLayout
-    chat layout: ChatsLayout page:chatsPage(空页面)  // windows:  默认， mobile :/pushUpPage/main/chat/1 ,
+    chat layout:ChatsLayout page:chatsPage(空页面)  // windows:默认， mobile:/pushUpPage/main/chat/1 ,
       [user_id] page: chatPage
     通讯录
     发现
@@ -25,8 +26,8 @@ import 'package:path/path.dart' as path_;
 ### 方案2:
 /
   main layout:MainWindowLayout
-    chat layout: ChatsLayout page:chatsPage(空页面)  // windows:  默认， mobile :/pushUpPage/main/chat/1 ,
-      [user_id] page: chatPage , layoutRetry: LayoutRetry.up   // fallStrategy: 页面踏空策略，如果页面没有被上游layout处理，则用此此略push一个新page
+    chat layout:ChatsLayout page:chatsPage(空页面)  // windows:默认， mobile:/pushUpPage/main/chat/1 ,
+      [user_id] page:chatPage , layoutRetry:LayoutRetry.up   // fallStrategy: 页面踏空策略，如果页面没有被上游layout处理，则用此此略push一个新page
     通讯录
     发现
     我
@@ -84,7 +85,7 @@ class ToRouter {
   }
 
   // [PlatformRouteInformationProvider.initialRouteInformation]
-  RouterConfig<Object> config({required Uri initial}) {
+  RouterConfig<Object> config({required Uri initial, required GlobalKey<NavigatorState> navigatorKey}) {
     return RouterConfig<Object>(
       routeInformationProvider: PlatformRouteInformationProvider(
         initialRouteInformation: RouteInformation(
@@ -94,7 +95,7 @@ class ToRouter {
       routerDelegate: LoggableRouterDelegate(
           logger: logger,
           delegate: _RouterDelegate(
-            navigatorKey: GlobalKey<NavigatorState>(debugLabel: "myNavigator"),
+            navigatorKey: navigatorKey,
             router: this,
           )),
       routeInformationParser: _RouteInformationParser(router: this),

@@ -3,7 +3,9 @@ import 'package:kou_macos/src/common/to_router.dart';
 import 'package:kou_macos/src/routes.dart';
 
 class App extends StatefulWidget {
-  const App({super.key, required this.title});
+  static final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>(debugLabel: "myNavigator");
+
+  App({super.key, required this.title});
 
   final String title;
 
@@ -22,12 +24,11 @@ class _AppState extends State<App> {
   @override
   Widget build(BuildContext context) {
     var app = MaterialApp.router(
-      title: 'kou cloud app manage',
-      // dart or light follow system preferences
-      theme: ThemeData(colorScheme: const ColorScheme.light(), useMaterial3: true),
-      darkTheme: ThemeData(colorScheme: const ColorScheme.dark(), useMaterial3: true),
-      routerConfig: router.config(initial: rootRoute.uri),
-    );
+        title: 'kou cloud app manage',
+        // dart or light follow system preferences
+        theme: ThemeData(colorScheme: const ColorScheme.light(), useMaterial3: true),
+        darkTheme: ThemeData(colorScheme: const ColorScheme.dark(), useMaterial3: true),
+        routerConfig: router.config(initial: rootRoute.uri, navigatorKey: App.navigatorKey));
     return app;
   }
 }

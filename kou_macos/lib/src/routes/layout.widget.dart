@@ -6,6 +6,7 @@ Widget layout(BuildContext context,RouteState state, Widget content) {
   return Layout(content: content);
 }
 
+@immutable
 class Layout extends StatelessWidget {
   Widget content;
 

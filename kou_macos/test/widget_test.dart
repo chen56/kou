@@ -12,7 +12,7 @@ import 'package:kou_macos/app.dart';
 void main() {
   testWidgets('Counter increments smoke test', (WidgetTester tester) async {
     // Build our app and trigger a frame.
-    await tester.pumpWidget(const App(title: 'test',));
+    await tester.pumpWidget(App(title: 'test'));
 
     // Verify that our counter starts at 0.
     expect(find.text('0'), findsOneWidget);
