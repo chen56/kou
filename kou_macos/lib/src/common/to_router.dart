@@ -18,7 +18,7 @@ import 'package:path/path.dart' as path_;
     通讯录
     发现
     我
-  pushUpPage
+  pushUpPage newRouteBehaviour:pop  // 切换新路由，pop弹出有返回按钮的页面
     main
       chat
         [user_id]  ref-> /main/chat/user_id
@@ -171,7 +171,7 @@ class To {
 
   List<To> get ancestors => isRoot ? [] : [_parent!, ..._parent!.ancestors];
 
-  List<To> get meAndAncestors => [this, ...ancestors];
+  List<To> get meToRootNodes => [this, ...ancestors];
 
   To? _matchChild({required String segment}) {
     To? matched = children
@@ -236,7 +236,7 @@ class To {
   Widget build(BuildContext context) {
     var state = RouteState();
     var content = _page!(context, state);
-    for (var to in meAndAncestors) {
+    for (var to in meToRootNodes) {
       if (to._layout != null) {
         content = to._layout!(context, state, content);
       }
