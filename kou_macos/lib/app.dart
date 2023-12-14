@@ -5,7 +5,7 @@ import 'package:kou_macos/src/routes.dart';
 class App extends StatefulWidget {
   static final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>(debugLabel: "myNavigator");
 
-  App({super.key, required this.title});
+  const App({super.key, required this.title});
 
   final String title;
 

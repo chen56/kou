@@ -10,7 +10,7 @@ void main() {
   void initWindow() {
     if (!kIsWeb && (Platform.isWindows || Platform.isLinux || Platform.isMacOS)) {
       final double windowWidth = WindowClass.m.widthFrom;
-      const double windowHeight = 800;
+      const double windowHeight = 600;
 
       WidgetsFlutterBinding.ensureInitialized();
       window_size.setWindowTitle('我扣应用商店');
@@ -26,5 +26,5 @@ void main() {
   }
 
   initWindow();
-  runApp(App(title: "kou cloud apps"));
+  runApp(const App(title: "kou cloud apps"));
 }

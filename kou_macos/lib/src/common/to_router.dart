@@ -41,6 +41,7 @@ class RouteInstance {
 
   RouteInstance({required this.uri});
 
+  @protected
   Uri uriJoin(String child) {
     return uri.replace(path: [...uri.pathSegments, child].join("/"));
   }
@@ -143,8 +144,7 @@ class To {
   })  : assert(children.isNotEmpty || page != null),
         assert(part == "/" || !part.contains("/"), "part:'$part' assert fail"),
         _page = page,
-        _layout = layout,
-        _notFound = notFound {
+        _layout = layout {
     var parsed = _parse(part);
     _paramName = parsed.$1;
     _paramType = parsed.$2;
@@ -161,7 +161,6 @@ class To {
   To? _parent;
   final LayoutBuilder? _layout;
   final PageBuilder? _page;
-  final PageBuilder? _notFound;
   final LayoutRetry layoutRetry;
   final List<To> children;
 
