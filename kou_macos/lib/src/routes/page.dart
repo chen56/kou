@@ -3,10 +3,14 @@ import 'package:flutter/cupertino.dart';
 import 'package:kou_macos/src/common/to_router.dart';
 import 'package:kou_macos/src/routes/tencent_cloud/page.dart';
 
-class Root extends RouteInstance {
-  Root() : super(uri: Uri.parse("/"));
+class RootPage extends RouteInstance {
+  RootPage() : super(uri: Uri.parse("/"));
 
   TencentCloud get tencent_cloud => TencentCloud(parent: this);
+
+  Widget page(BuildContext context, RouteState state) {
+    return const Text("/  root page");
+  }
 }
 
 Widget page(BuildContext context, RouteState state) {

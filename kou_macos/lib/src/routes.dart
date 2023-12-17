@@ -6,7 +6,7 @@ import 'package:kou_macos/src/routes/page.dart' as root;
 import 'package:kou_macos/src/routes/page.dart';
 import 'package:kou_macos/src/routes/tencent_cloud/page.dart' as tencent_cloud;
 
-final rootRoute = Root();
+final rootRoute = RootPage();
 
 ToRouter createRouter() {
   To rootRoute = To("/", page: root.page, layout: root_layout.layout, children: [

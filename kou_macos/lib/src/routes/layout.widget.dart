@@ -3,14 +3,14 @@ import 'package:kou_macos/src/common/to_router.dart';
 import 'package:kou_macos/src/routes.dart';
 
 Widget layout(BuildContext context,RouteState state, Widget content) {
-  return Layout(content: content);
+  return _RootLayout(content: content);
 }
 
 @immutable
-class Layout extends StatelessWidget {
-  Widget content;
+class _RootLayout extends StatelessWidget {
+  final Widget content;
 
-  Layout({super.key, required this.content});
+  const _RootLayout({required this.content});
 
   @override
   Widget build(BuildContext context) {

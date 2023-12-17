@@ -36,7 +36,7 @@ import 'package:path/path.dart' as path_;
 typedef LayoutBuilder = Widget Function(BuildContext context, RouteState state, Widget content);
 typedef PageBuilder = Widget Function(BuildContext context, RouteState state);
 
-class RouteInstance {
+abstract class RouteInstance {
   final Uri uri;
 
   RouteInstance({required this.uri});
@@ -45,6 +45,8 @@ class RouteInstance {
   Uri uriJoin(String child) {
     return uri.replace(path: [...uri.pathSegments, child].join("/"));
   }
+
+  Widget page(BuildContext context, RouteState state);
 }
 
 class RouteState {}
