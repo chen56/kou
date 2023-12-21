@@ -37,10 +37,12 @@ typedef LayoutBuilder = Widget Function(BuildContext context, RouteState state, 
 typedef PageBuilder = Widget Function(BuildContext context, RouteState state);
 
 abstract class RouteInstance {
+  final RouteInstance? parent;
   final Uri uri;
 
-  RouteInstance({required this.uri});
+  const RouteInstance({required this.parent, required this.uri});
 
+  /// Creates a new `Uri` based on this one, but with some parts replaced.
   @protected
   Uri uriJoin(String child) {
     return uri.replace(path: [...uri.pathSegments, child].join("/"));
@@ -175,14 +177,11 @@ class To {
   List<To> get meToRootNodes => [this, ...ancestors];
 
   To? _matchChild({required String segment}) {
-    To? matched = children
-        .where((e) => e._paramType == ToNodeType.static)
-        .where((e) => segment == e._paramName)
-        .firstOrNull;
+    To? matched =
+        children.where((e) => e._paramType == ToNodeType.static).where((e) => segment == e._paramName).firstOrNull;
     if (matched != null) return matched;
-    matched = children
-        .where((e) => e._paramType == ToNodeType.dynamic || e._paramType == ToNodeType.dynamicAll)
-        .firstOrNull;
+    matched =
+        children.where((e) => e._paramType == ToNodeType.dynamic || e._paramType == ToNodeType.dynamicAll).firstOrNull;
     if (matched != null) return matched;
     return null;
   }
@@ -400,9 +399,7 @@ class _RouterDelegate extends RouterDelegate<_ToRouteInformation>
         notifyListeners();
         return true;
       },
-      pages: stack
-          .map((e) => MaterialPage(key: ValueKey(pageKeyGen++), child: e.matched.to.build(context)))
-          .toList(),
+      pages: stack.map((e) => MaterialPage(key: ValueKey(pageKeyGen++), child: e.matched.to.build(context))).toList(),
     );
   }
 
