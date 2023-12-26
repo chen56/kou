@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:kou_macos/src/common/to_router.dart';
-import 'package:kou_macos/src/routes/machine/apps/[app]/page.dart';
+import 'package:kou_macos/src/routes/machines/apps/[app]/page.dart';
 
 class AppsRoute extends RouteInstance {
   const AppsRoute({required super.parent, required super.uri});

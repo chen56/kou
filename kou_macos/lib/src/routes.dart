@@ -2,7 +2,7 @@
 
 import 'package:kou_macos/src/common/to_router.dart';
 import 'package:kou_macos/src/routes/layout.widget.dart' as root_layout;
-import 'package:kou_macos/src/routes/machine/page.dart' as machine;
+import 'package:kou_macos/src/routes/machines/page.dart' as machine;
 import 'package:kou_macos/src/routes/page.dart' as root;
 import 'package:kou_macos/src/routes/page.dart';
 
