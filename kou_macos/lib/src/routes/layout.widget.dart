@@ -25,15 +25,6 @@ class _RootLayout extends StatelessWidget {
           child: Align(alignment: Alignment.centerLeft, child: Text(title)));
     }
 
-    // var content = const Center(
-    //   child: Column(
-    //     mainAxisAlignment: MainAxisAlignment.center,
-    //     // ...children
-    //     children: <Widget>[
-    //       Text('You have pushed the button this many times:'),
-    //     ],
-    //   ),
-    // );
     var scaffold = Scaffold(
       primary: true,
       // content...
