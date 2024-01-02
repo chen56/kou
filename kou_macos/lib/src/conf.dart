@@ -30,8 +30,6 @@ class KouConf {
     return KouConf.decode(json);
   }
 
-  KouConf.decodeJson(String jsonStr) : this.decode(jsonDecode(jsonStr));
-
   Future<KouConf> save(File file) async {
     await file.writeAsString(_encoder.convert(encode()));
     return this;
