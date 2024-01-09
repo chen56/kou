@@ -15,8 +15,11 @@ Widget page(BuildContext context, RouteState state) => Text("page $state");
 Widget notFound(BuildContext context, RouteState state) => const Text("404 not found");
 
 void main() {
-  group("ToRouter.parse ok", () {
-    rootRoute.uri;
-    test('static', () {});
+  group("强类型route", () {
+    test('route.uri', () {
+      expect(rootRoute.uri.toString(), equals("/"));
+      expect(rootRoute.machines.uri.toString(), equals("/machines"));
+      expect(rootRoute.machines.machine(machine: "machine1").uri.toString(), equals("/machines/machine1"));
+    });
   });
 }

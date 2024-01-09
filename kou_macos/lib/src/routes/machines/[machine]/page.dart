@@ -1,11 +1,10 @@
 import 'package:flutter/widgets.dart';
 import 'package:kou_macos/src/common/to_router.dart';
-import 'package:kou_macos/src/routes/machines/apps/page.dart';
 
 class MachineRoute extends RouteInstance {
-  const MachineRoute({required super.parent, required super.uri});
+  final String machine;
 
-  AppsRoute get apps => AppsRoute(parent: this, uri: uriJoin("apps"));
+  MachineRoute({required super.parent, required this.machine}) : super(uri: parent.uriJoin(machine));
 
   @override
   Widget page(BuildContext context, RouteState state) {

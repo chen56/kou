@@ -38,9 +38,7 @@ class _RootLayout extends StatelessWidget {
               scrollDirection: Axis.vertical,
               children: [
                 link("︎︎︎▶ dashboard", rootRoute.uri, Icons.abc),
-                link("︎︎︎▶ vm1-腾讯云香港", rootRoute.machine.uri, Icons.abc),
-                link("  ︎︎ ■ df webui", Uri.parse("/apps/df-webui"), Icons.abc),
-                link("  ︎︎︎ ■ out service", Uri.parse("/apps/out"), Icons.abc),
+                for (var machine in ["machine1", "machine2"]) link("︎︎︎▶ vm1-腾讯云香港", rootRoute.machines.machine(machine: machine).uri, Icons.abc),
               ],
             ),
           ),

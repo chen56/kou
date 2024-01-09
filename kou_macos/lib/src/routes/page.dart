@@ -3,14 +3,18 @@ import 'package:flutter/cupertino.dart';
 import 'package:kou_macos/src/common/to_router.dart';
 import 'package:kou_macos/src/routes/machines/page.dart';
 
-class RootRoute extends RouteInstance {
+class RootRoute extends RouteInstance<Null> {
   RootRoute() : super(parent: null, uri: Uri.parse("/"));
 
-  MachinesRoute get machine => MachinesRoute(parent: this, uri: Uri.parse("/apps"));
+  MachinesRoute get machines => MachinesRoute(parent: this);
 
   @override
   Widget page(BuildContext context, RouteState state) {
     return const Text("/  root page");
+  }
+
+  factory RootRoute.parse(MatchTo to) {
+    return RootRoute();
   }
 }
 

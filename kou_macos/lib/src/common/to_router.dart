@@ -36,16 +36,16 @@ import 'package:path/path.dart' as path_;
 typedef LayoutBuilder = Widget Function(BuildContext context, RouteState state, Widget content);
 typedef PageBuilder = Widget Function(BuildContext context, RouteState state);
 
-abstract class RouteInstance {
-  final RouteInstance? parent;
+abstract class RouteInstance<T> {
+  final T parent;
   final Uri uri;
 
-  const RouteInstance({required this.parent, required this.uri});
+  RouteInstance({required this.parent, required this.uri});
 
   /// Creates a new `Uri` based on this one, but with some parts replaced.
   @protected
   Uri uriJoin(String child) {
-    return uri.replace(path: [...uri.pathSegments, child].join("/"));
+    return uri.replace(pathSegments: ["", ...uri.pathSegments, child]);
   }
 
   Widget page(BuildContext context, RouteState state);
@@ -90,7 +90,7 @@ class ToRouter {
   }
 
   // [PlatformRouteInformationProvider.initialRouteInformation]
-  RouterConfig<Object> config({required Uri initial, required GlobalKey<NavigatorState> navigatorKey}) {
+  RouterConfig<Object> toRouterConfig({required Uri initial, required GlobalKey<NavigatorState> navigatorKey}) {
     return RouterConfig<Object>(
       routeInformationProvider: PlatformRouteInformationProvider(
         initialRouteInformation: RouteInformation(
@@ -309,7 +309,7 @@ class MatchTo {
   final To to;
   final Uri uri;
   final Map<String, String> params;
-  final bool isNotFound;
+  final bool isNotFound; // todo change to isFound;
 
   MatchTo._({required this.uri, required this.to, this.params = const {}, this.isNotFound = false});
 }
