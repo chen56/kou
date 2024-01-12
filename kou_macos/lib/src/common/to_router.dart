@@ -35,12 +35,14 @@ import 'package:path/path.dart' as path_;
 
 typedef LayoutBuilder = Widget Function(BuildContext context, RouteState state, Widget content);
 typedef PageBuilder = Widget Function(BuildContext context, RouteState state);
+typedef ToParser = StrongTypeRoute Function(MatchTo to);
 
-abstract class RouteInstance<T> {
-  final T parent;
+/// strong type route instance
+abstract class StrongTypeRoute {
+  final StrongTypeRoute? parent;
   final Uri uri;
 
-  RouteInstance({required this.parent, required this.uri});
+  StrongTypeRoute({required this.parent, required this.uri});
 
   /// Creates a new `Uri` based on this one, but with some parts replaced.
   @protected
@@ -143,12 +145,13 @@ class To {
     LayoutBuilder? layout,
     this.layoutRetry = LayoutRetry.none,
     PageBuilder? page,
+    required ToParser parser,
     PageBuilder? notFound,
     this.children = const [],
-  })  : assert(children.isNotEmpty || page != null),
-        assert(part == "/" || !part.contains("/"), "part:'$part' assert fail"),
+  })  : assert(part == "/" || !part.contains("/"), "part:'$part' assert fail"),
         _page = page,
-        _layout = layout {
+        _layout = layout,
+        _toParser = parser {
     var parsed = _parse(part);
     _paramName = parsed.$1;
     _paramType = parsed.$2;
@@ -163,6 +166,7 @@ class To {
   late final ToNodeType _paramType;
 
   To? _parent;
+  final ToParser _toParser;
   final LayoutBuilder? _layout;
   final PageBuilder? _page;
   final LayoutRetry layoutRetry;

@@ -8,23 +8,24 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kou_macos/src/common/to_router.dart';
+import 'package:kou_macos/src/routes/page.dart';
 
-Widget page(BuildContext context, RouteState state) => Text("page $state");
+StrongTypeRoute _parser(MatchTo to) => ToRoot();
 
-Widget notFound(BuildContext context, RouteState state) => const Text("404 not found");
+Widget _notFound(BuildContext context, RouteState state) => const Text("404 not found");
 
 void main() {
   group("ToRouter.parse ok", () {
     var router = ToRouter(
-        root: To("/", page: page, children: [
-      To("settings", page: page, children: [
-        To("profile", page: page),
+        root: To("/", parser: _parser, children: [
+      To("settings", parser: _parser, children: [
+        To("profile", parser: _parser),
       ]),
-      To("[user]", page: page, children: [
-        To("[repository]", page: page, children: [
-          To("tree", /* no page */ children: [
-            To("[branch]", page: page, children: [
-              To("[...file]", page: page),
+      To("[user]", parser: _parser, children: [
+        To("[repository]", parser: _parser, children: [
+          To("tree", parser: _parser, children: [
+            To("[branch]", parser: _parser, children: [
+              To("[...file]", parser: _parser),
             ]),
           ]),
         ]),
@@ -90,9 +91,9 @@ void main() {
   });
   group("ToRouter.parse 404", () {
     var router = ToRouter(
-      root: To("/", page: page, notFound: notFound, children: [
-        To("settings", page: page, notFound: notFound, children: [
-          To("profile", page: page),
+      root: To("/", parser: _parser, notFound: _notFound, children: [
+        To("settings", parser: _parser, notFound: _notFound, children: [
+          To("profile", parser: _parser),
         ]),
       ]),
     );
