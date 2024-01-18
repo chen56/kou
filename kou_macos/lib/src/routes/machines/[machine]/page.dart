@@ -19,7 +19,7 @@ class ToMachine extends StrongTypeRoute {
   final ToMachines parent;
 
   @override
-  Uri get uri => parent!.uri.join(machine);
+  Uri get uri => parent.uri.join(machine);
 
   @override
   Widget page(BuildContext context, RouteState state) {
