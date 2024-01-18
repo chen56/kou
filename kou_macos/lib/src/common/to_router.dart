@@ -39,18 +39,18 @@ typedef ToParser = StrongTypeRoute Function(MatchTo to);
 
 /// strong type route instance
 abstract class StrongTypeRoute {
-  final StrongTypeRoute? parent;
-  final Uri uri;
+  StrongTypeRoute get parent;
 
-  StrongTypeRoute({required this.parent, required this.uri});
+  bool get isRoot => parent == this;
 
-  /// Creates a new `Uri` based on this one, but with some parts replaced.
-  @protected
-  Uri uriJoin(String child) {
-    return uri.replace(pathSegments: ["", ...uri.pathSegments, child]);
-  }
+  Uri get uri;
 
   Widget page(BuildContext context, RouteState state);
+}
+
+extension UriExt on Uri {
+  /// Creates a new `Uri` based on this one, but with some parts replaced.
+  Uri join(String child) => replace(pathSegments: ["", ...pathSegments, child]);
 }
 
 class RouteState {}
@@ -231,10 +231,6 @@ class To {
     }
 
     return matchedNext._match(uri: uri, segments: rest, params: params);
-  }
-
-  Widget buildPageContent(BuildContext context) {
-    return _page!(context, RouteState());
   }
 
   Widget build(BuildContext context) {

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:kou_macos/src/common/to_router.dart';
 import 'package:kou_macos/src/routes.dart';
 
-Widget layout(BuildContext context,RouteState state, Widget content) {
+Widget layout(BuildContext context, RouteState state, Widget content) {
   return _RootLayout(content: content);
 }
 
@@ -14,7 +14,7 @@ class _RootLayout extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Widget link(String title,Uri uri, IconData icon) {
+    Widget link(String title, Uri uri, IconData icon) {
       return MaterialButton(
           minWidth: double.infinity, // fill drawer space
           height: 46,

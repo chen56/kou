@@ -5,7 +5,7 @@ import 'package:kou_macos/src/routes/machines/page.dart';
 class ToMachine extends StrongTypeRoute {
   final String machine;
 
-  ToMachine({required super.parent, required this.machine}) : super(uri: parent!.uriJoin(machine));
+  ToMachine({required this.parent, required this.machine});
 
   factory ToMachine.parse(MatchTo to) {
     String? machine = to.params["machine"];
@@ -14,6 +14,12 @@ class ToMachine extends StrongTypeRoute {
     ToMachines parent = ToMachines.parse(to);
     return parent.machine(machine: machine!);
   }
+
+  @override
+  final ToMachines parent;
+
+  @override
+  Uri get uri => parent!.uri.join(machine);
 
   @override
   Widget page(BuildContext context, RouteState state) {
