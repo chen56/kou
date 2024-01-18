@@ -2,7 +2,7 @@ import 'package:flutter/widgets.dart';
 import 'package:kou_macos/src/common/to_router.dart';
 import 'package:kou_macos/src/routes/machines/page.dart';
 
-class ToMachine extends StrongTypeRoute {
+class ToMachine extends StaticTypeRoute {
   final String machine;
 
   ToMachine({required this.parent, required this.machine});

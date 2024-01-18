@@ -35,11 +35,11 @@ import 'package:path/path.dart' as path_;
 
 typedef LayoutBuilder = Widget Function(BuildContext context, RouteState state, Widget content);
 typedef PageBuilder = Widget Function(BuildContext context, RouteState state);
-typedef ToParser = StrongTypeRoute Function(MatchTo to);
+typedef ToParser = StaticTypeRoute Function(MatchTo to);
 
-/// strong type route instance
-abstract class StrongTypeRoute {
-  StrongTypeRoute get parent;
+/// static type route instance
+abstract class StaticTypeRoute {
+  StaticTypeRoute get parent;
 
   bool get isRoot => parent == this;
 

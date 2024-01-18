@@ -10,7 +10,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:kou_macos/src/common/to_router.dart';
 import 'package:kou_macos/src/routes/page.dart';
 
-StrongTypeRoute _parser(MatchTo to) => ToRoot();
+StaticTypeRoute _parser(MatchTo to) => ToRoot();
 
 Widget _notFound(BuildContext context, RouteState state) => const Text("404 not found");
 

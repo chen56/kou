@@ -3,7 +3,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:kou_macos/src/common/to_router.dart';
 import 'package:kou_macos/src/routes/machines/page.dart';
 
-class ToRoot extends StrongTypeRoute {
+class ToRoot extends StaticTypeRoute {
   ToRoot();
 
   factory ToRoot.parse(MatchTo to) {

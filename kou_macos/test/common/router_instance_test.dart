@@ -15,14 +15,14 @@ Widget page(BuildContext context, RouteState state) => Text("page $state");
 Widget notFound(BuildContext context, RouteState state) => const Text("404 not found");
 
 void main() {
-  group("strong type route use", () {
+  group("static type route use", () {
     test('route.uri', () {
       expect(rootRoute.uri.toString(), equals("/"));
       expect(rootRoute.machines.uri.toString(), equals("/machines"));
       expect(rootRoute.machines.machine(machine: "machine1").uri.toString(), equals("/machines/machine1"));
     });
   });
-  group("strong type route parse", () {
+  group("static type route parse", () {
     test('route.uri', () {});
   });
 }

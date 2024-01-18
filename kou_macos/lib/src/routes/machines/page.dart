@@ -4,7 +4,7 @@ import 'package:kou_macos/src/routes/page.dart';
 
 import '[machine]/page.dart';
 
-class ToMachines extends StrongTypeRoute {
+class ToMachines extends StaticTypeRoute {
   ToMachines({required this.parent});
 
   ToMachine machine({required String machine}) => ToMachine(parent: this, machine: machine);
