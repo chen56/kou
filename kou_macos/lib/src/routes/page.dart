@@ -3,10 +3,10 @@ import 'package:flutter/cupertino.dart';
 import 'package:kou_macos/src/common/to_router.dart';
 import 'package:kou_macos/src/routes/machines/page.dart';
 
-class ToRoot extends StaticTypeRoute {
+class ToRoot extends PageSpec {
   ToRoot();
 
-  factory ToRoot.parse(MatchTo to) {
+  factory ToRoot.parse(PageSpec parent, MatchTo to) {
     return ToRoot();
   }
 
@@ -16,7 +16,7 @@ class ToRoot extends StaticTypeRoute {
   Uri get uri => Uri.parse("/");
 
   @override
-  Widget page(BuildContext context, RouteState state) {
+  Widget build(BuildContext context) {
     return const Text("/  root page");
   }
 

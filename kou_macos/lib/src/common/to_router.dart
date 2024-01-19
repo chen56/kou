@@ -35,17 +35,17 @@ import 'package:path/path.dart' as path_;
 
 typedef LayoutBuilder = Widget Function(BuildContext context, RouteState state, Widget content);
 typedef PageBuilder = Widget Function(BuildContext context, RouteState state);
-typedef ToParser = StaticTypeRoute Function(MatchTo to);
+typedef ToPageBuilder = PageSpec Function(PageSpec parent, MatchTo to);
 
 /// static type route instance
-abstract class StaticTypeRoute {
-  StaticTypeRoute get parent;
+abstract class PageSpec {
+  PageSpec get parent;
 
   bool get isRoot => parent == this;
 
   Uri get uri;
 
-  Widget page(BuildContext context, RouteState state);
+  Widget build(BuildContext context);
 }
 
 extension UriExt on Uri {
@@ -56,9 +56,12 @@ extension UriExt on Uri {
 class RouteState {}
 
 class ToRouter {
-  To root;
+  final To root;
+  final PageSpec _rootToPage;
 
-  ToRouter({required this.root}) : assert(root.path == "/");
+  ToRouter({required this.root, required PageSpec rootToPage})
+      : assert(root.path == "/"),
+        _rootToPage = rootToPage;
 
   static ToRouter of(BuildContext context) {
     var result = context.findAncestorWidgetOfExactType<_RouterScope>();
@@ -108,6 +111,12 @@ class ToRouter {
       routeInformationParser: _RouteInformationParser(router: this),
     );
   }
+
+  R parse<R extends PageSpec>(String uri) {
+    var matchTo = match(uri);
+
+    return matchTo.to._toStaticType(_rootToPage, matchTo) as R;
+  }
 }
 
 /// Layout失败重试策略
@@ -145,13 +154,13 @@ class To {
     LayoutBuilder? layout,
     this.layoutRetry = LayoutRetry.none,
     PageBuilder? page,
-    required ToParser parser,
+        required ToPageBuilder parser,
     PageBuilder? notFound,
     this.children = const [],
   })  : assert(part == "/" || !part.contains("/"), "part:'$part' assert fail"),
         _page = page,
         _layout = layout,
-        _toParser = parser {
+        _toPageParser = parser {
     var parsed = _parse(part);
     _paramName = parsed.$1;
     _paramType = parsed.$2;
@@ -166,7 +175,7 @@ class To {
   late final ToNodeType _paramType;
 
   To? _parent;
-  final ToParser _toParser;
+  final ToPageBuilder _toPageParser;
   final LayoutBuilder? _layout;
   final PageBuilder? _page;
   final LayoutRetry layoutRetry;
@@ -302,6 +311,14 @@ class To {
     return '''${"  " * level}<Route path='$path' >
 ${children.map((e) => e._toStringDeep(level: level + 1)).join("\n")}
 ${"  " * level}</Route>''';
+  }
+
+  PageSpec _toStaticType(PageSpec rootToPage, MatchTo matchTo) {
+    if (isRoot) {
+      return _toPageParser(rootToPage, matchTo);
+    }
+    var parentStaticType = _parent!._toStaticType(rootToPage, matchTo);
+    return _toPageParser(parentStaticType, matchTo);
   }
 }
 

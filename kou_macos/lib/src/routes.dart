@@ -12,10 +12,10 @@ import 'package:kou_macos/src/routes/page.dart';
 final rootRoute = ToRoot();
 
 ToRouter createRouter() {
-  To rootRoute = To("/", page: root.page, parser: ToRoot.parse, layout: root_layout.layout, children: [
+  To r = To("/", page: root.page, parser: ToRoot.parse, layout: root_layout.layout, children: [
     To("machines", page: machines.page, parser: ToMachines.parse, children: [
       To("[machine]", page: machine.page, parser: ToMachine.parse),
     ]),
   ]);
-  return ToRouter(root: rootRoute);
+  return ToRouter(root: r, rootToPage: rootRoute);
 }

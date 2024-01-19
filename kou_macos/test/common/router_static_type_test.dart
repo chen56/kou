@@ -5,16 +5,13 @@
 // gestures. You can also use WidgetTester to find child widgets in the widget
 // tree, read text, and verify that the values of widget properties are correct.
 
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:kou_macos/src/common/to_router.dart';
 import 'package:kou_macos/src/routes.dart';
-
-Widget page(BuildContext context, RouteState state) => Text("page $state");
-
-Widget notFound(BuildContext context, RouteState state) => const Text("404 not found");
+import 'package:kou_macos/src/routes/machines/[machine]/page.dart';
 
 void main() {
+  var router = createRouter();
+
   group("static type route use", () {
     test('route.uri', () {
       expect(rootRoute.uri.toString(), equals("/"));
@@ -23,6 +20,9 @@ void main() {
     });
   });
   group("static type route parse", () {
-    test('route.uri', () {});
+    test('route.uri', () {
+      ToMachine toMachine = router.parse<ToMachine>("/machines/machine1");
+      expect("machine1", toMachine.machine);
+    });
   });
 }

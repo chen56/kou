@@ -10,27 +10,28 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:kou_macos/src/common/to_router.dart';
 import 'package:kou_macos/src/routes/page.dart';
 
-StaticTypeRoute _parser(MatchTo to) => ToRoot();
+PageSpec _parser(PageSpec parent, MatchTo to) => throw Exception("not here");
 
 Widget _notFound(BuildContext context, RouteState state) => const Text("404 not found");
 
 void main() {
   group("ToRouter.parse ok", () {
     var router = ToRouter(
+        rootToPage: ToRoot(), //stub
         root: To("/", parser: _parser, children: [
-      To("settings", parser: _parser, children: [
-        To("profile", parser: _parser),
-      ]),
-      To("[user]", parser: _parser, children: [
-        To("[repository]", parser: _parser, children: [
-          To("tree", parser: _parser, children: [
-            To("[branch]", parser: _parser, children: [
-              To("[...file]", parser: _parser),
+          To("settings", parser: _parser, children: [
+            To("profile", parser: _parser),
+          ]),
+          To("[user]", parser: _parser, children: [
+            To("[repository]", parser: _parser, children: [
+              To("tree", parser: _parser, children: [
+                To("[branch]", parser: _parser, children: [
+                  To("[...file]", parser: _parser),
+                ]),
+              ]),
             ]),
           ]),
-        ]),
-      ]),
-    ]));
+        ]));
     // Tos.root.user("chen56").repository("note").tree.branch("main").file("a/b/c.dart");
     // Tos.user_repository_tree_branch_file(user:"chen56",repository:"note",branch:"main",file:"a/b");
     void match(String path, {required ({String matched, Map<String, String> params}) expected}) {
@@ -91,6 +92,7 @@ void main() {
   });
   group("ToRouter.parse 404", () {
     var router = ToRouter(
+      rootToPage: ToRoot(), //stub
       root: To("/", parser: _parser, notFound: _notFound, children: [
         To("settings", parser: _parser, notFound: _notFound, children: [
           To("profile", parser: _parser),

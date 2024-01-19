@@ -4,14 +4,13 @@ import 'package:kou_macos/src/routes/page.dart';
 
 import '[machine]/page.dart';
 
-class ToMachines extends StaticTypeRoute {
+class ToMachines extends PageSpec {
   ToMachines({required this.parent});
 
   ToMachine machine({required String machine}) => ToMachine(parent: this, machine: machine);
 
-  factory ToMachines.parse(MatchTo to) {
-    ToRoot parent = ToRoot.parse(to);
-    return parent.machines;
+  factory ToMachines.parse(PageSpec parent, MatchTo to) {
+    return (parent as ToRoot).machines;
   }
 
   @override
@@ -21,7 +20,7 @@ class ToMachines extends StaticTypeRoute {
   Uri get uri => parent.uri.join("machines");
 
   @override
-  Widget page(BuildContext context, RouteState state) {
+  Widget build(BuildContext context) {
     return const Text("/machine page");
   }
 }
