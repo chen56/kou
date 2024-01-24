@@ -18,15 +18,15 @@ void main() {
   group("ToRouter.parse ok", () {
     var router = ToRouter(
         rootToPage: ToRoot(), //stub
-        root: To("/", parser: _parser, children: [
-          To("settings", parser: _parser, children: [
-            To("profile", parser: _parser),
+        root: To("/", pageSpecBuilder: _parser, children: [
+          To("settings", pageSpecBuilder: _parser, children: [
+            To("profile", pageSpecBuilder: _parser),
           ]),
-          To("[user]", parser: _parser, children: [
-            To("[repository]", parser: _parser, children: [
-              To("tree", parser: _parser, children: [
-                To("[branch]", parser: _parser, children: [
-                  To("[...file]", parser: _parser),
+          To("[user]", pageSpecBuilder: _parser, children: [
+            To("[repository]", pageSpecBuilder: _parser, children: [
+              To("tree", pageSpecBuilder: _parser, children: [
+                To("[branch]", pageSpecBuilder: _parser, children: [
+                  To("[...file]", pageSpecBuilder: _parser),
                 ]),
               ]),
             ]),
@@ -93,9 +93,9 @@ void main() {
   group("ToRouter.parse 404", () {
     var router = ToRouter(
       rootToPage: ToRoot(), //stub
-      root: To("/", parser: _parser, notFound: _notFound, children: [
-        To("settings", parser: _parser, notFound: _notFound, children: [
-          To("profile", parser: _parser),
+      root: To("/", pageSpecBuilder: _parser, notFound: _notFound, children: [
+        To("settings", pageSpecBuilder: _parser, notFound: _notFound, children: [
+          To("profile", pageSpecBuilder: _parser),
         ]),
       ]),
     );

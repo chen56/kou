@@ -6,6 +6,9 @@ import 'package:kou_macos/src/common/log.dart';
 import 'package:path/path.dart' as path_;
 
 /*
+ref: https://github.com/react-navigation/react-navigation
+
+
 ## 用例：聊天窗口在
   手机屏：push新page
   桌面屏：层级展示（没有push新page）
@@ -35,7 +38,7 @@ import 'package:path/path.dart' as path_;
 
 typedef LayoutBuilder = Widget Function(BuildContext context, RouteState state, Widget content);
 typedef PageBuilder = Widget Function(BuildContext context, RouteState state);
-typedef ToPageBuilder = PageSpec Function(PageSpec parent, MatchTo to);
+typedef PageSpecBuilder = PageSpec Function(PageSpec parent, MatchTo to);
 
 /// static type route instance
 abstract class PageSpec {
@@ -57,11 +60,11 @@ class RouteState {}
 
 class ToRouter {
   final To root;
-  final PageSpec _rootToPage;
+  final PageSpec _rootPageSpec;
 
   ToRouter({required this.root, required PageSpec rootToPage})
       : assert(root.path == "/"),
-        _rootToPage = rootToPage;
+        _rootPageSpec = rootToPage;
 
   static ToRouter of(BuildContext context) {
     var result = context.findAncestorWidgetOfExactType<_RouterScope>();
@@ -79,6 +82,15 @@ class ToRouter {
 
   MatchTo match(String uri) {
     return matchUri(Uri.parse(uri));
+  }
+
+  R parse<R extends PageSpec>(String uri) {
+    return parseUri(Uri.parse(uri));
+  }
+
+  R parseUri<R extends PageSpec>(Uri uri) {
+    var matchTo = matchUri(uri);
+    return matchTo.to._toPageSpec(_rootPageSpec, matchTo) as R;
   }
 
   /// must exist uri
@@ -110,12 +122,6 @@ class ToRouter {
           )),
       routeInformationParser: _RouteInformationParser(router: this),
     );
-  }
-
-  R parse<R extends PageSpec>(String uri) {
-    var matchTo = match(uri);
-
-    return matchTo.to._toStaticType(_rootToPage, matchTo) as R;
   }
 }
 
@@ -154,13 +160,13 @@ class To {
     LayoutBuilder? layout,
     this.layoutRetry = LayoutRetry.none,
     PageBuilder? page,
-        required ToPageBuilder parser,
+    required PageSpecBuilder pageSpecBuilder,
     PageBuilder? notFound,
     this.children = const [],
   })  : assert(part == "/" || !part.contains("/"), "part:'$part' assert fail"),
         _page = page,
         _layout = layout,
-        _toPageParser = parser {
+        _pageSpecBuilder = pageSpecBuilder {
     var parsed = _parse(part);
     _paramName = parsed.$1;
     _paramType = parsed.$2;
@@ -175,7 +181,7 @@ class To {
   late final ToNodeType _paramType;
 
   To? _parent;
-  final ToPageBuilder _toPageParser;
+  final PageSpecBuilder _pageSpecBuilder;
   final LayoutBuilder? _layout;
   final PageBuilder? _page;
   final LayoutRetry layoutRetry;
@@ -187,7 +193,7 @@ class To {
 
   List<To> get ancestors => isRoot ? [] : [_parent!, ..._parent!.ancestors];
 
-  List<To> get meToRootNodes => [this, ...ancestors];
+  List<To> get listToRoot => [this, ...ancestors];
 
   To? _matchChild({required String segment}) {
     To? matched =
@@ -245,7 +251,7 @@ class To {
   Widget build(BuildContext context) {
     var state = RouteState();
     var content = _page!(context, state);
-    for (var to in meToRootNodes) {
+    for (var to in listToRoot) {
       if (to._layout != null) {
         content = to._layout!(context, state, content);
       }
@@ -313,12 +319,12 @@ ${children.map((e) => e._toStringDeep(level: level + 1)).join("\n")}
 ${"  " * level}</Route>''';
   }
 
-  PageSpec _toStaticType(PageSpec rootToPage, MatchTo matchTo) {
+  PageSpec _toPageSpec(PageSpec rootPageSpec, MatchTo matchTo) {
     if (isRoot) {
-      return _toPageParser(rootToPage, matchTo);
+      return _pageSpecBuilder(rootPageSpec, matchTo);
     }
-    var parentStaticType = _parent!._toStaticType(rootToPage, matchTo);
-    return _toPageParser(parentStaticType, matchTo);
+    var parentStaticType = _parent!._toPageSpec(rootPageSpec, matchTo);
+    return _pageSpecBuilder(parentStaticType, matchTo);
   }
 }
 
@@ -349,11 +355,19 @@ class _RouterScope extends StatelessWidget {
 }
 
 class _ToRouteInformation {
-  final MatchTo matched;
+  static int pageKeyGen = 0;
 
-  _ToRouteInformation({required this.matched});
+  final MatchTo matched;
+  final PageSpec pageSpec;
+
+  _ToRouteInformation({required this.matched, required this.pageSpec});
 
   get uri => matched.uri;
+
+  // todo move Build to PageSpec
+  Page<dynamic> build(BuildContext context) {
+    return MaterialPage(key: ValueKey(pageKeyGen++), child: pageSpec.build(context));
+  }
 }
 
 class _RouteInformationParser extends RouteInformationParser<_ToRouteInformation> {
@@ -363,8 +377,10 @@ class _RouteInformationParser extends RouteInformationParser<_ToRouteInformation
 
   @override
   Future<_ToRouteInformation> parseRouteInformation(RouteInformation routeInformation) {
+    // todo Simplify parse pageSpec
     MatchTo matchTo = router.matchUri(routeInformation.uri);
-    return SynchronousFuture(_ToRouteInformation(matched: matchTo));
+    PageSpec pageSpec = matchTo.to._toPageSpec(router._rootPageSpec, matchTo);
+    return SynchronousFuture(_ToRouteInformation(matched: matchTo, pageSpec: pageSpec));
   }
 
   @override
@@ -416,11 +432,10 @@ class _RouterDelegate extends RouterDelegate<_ToRouteInformation>
         notifyListeners();
         return true;
       },
-      pages: stack.map((e) => MaterialPage(key: ValueKey(pageKeyGen++), child: e.matched.to.build(context))).toList(),
+      pages: stack.map((e) => e.build(context)).toList(),
     );
   }
 
-  static int pageKeyGen = 0;
 
   @override
   Widget build(BuildContext context) {

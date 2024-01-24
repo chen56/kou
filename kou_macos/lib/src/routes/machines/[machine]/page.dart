@@ -22,7 +22,7 @@ class ToMachine extends PageSpec {
 
   @override
   Widget build(BuildContext context) {
-    return const Text("/machine page");
+    return Text("/machine page : $machine");
   }
 }
 

@@ -37,7 +37,8 @@ class _AppState extends State<App> {
       title: widget.title,
       theme: ThemeData(colorScheme: const ColorScheme.light(), useMaterial3: true),
       darkTheme: ThemeData(colorScheme: const ColorScheme.dark(), useMaterial3: true),
-      routerConfig: router.toRouterConfig(initial: rootRoute.uri, navigatorKey: App.navigatorKey),
+      routerConfig: router.toRouterConfig(
+          initial: rootRoute.machines.machine(machine: "hello machine").uri, navigatorKey: App.navigatorKey),
     );
   }
 }
