@@ -10,7 +10,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:kou_macos/src/common/to_router.dart';
 import 'package:kou_macos/src/routes/page.dart';
 
-PageSpec _parser(PageSpec parent, MatchTo to) => throw Exception("not here");
+PageSpec _parser(PageSpec parent, ToLocation to) => throw Exception("not here");
 
 Widget _notFound(BuildContext context, RouteState state) => const Text("404 not found");
 
@@ -34,60 +34,60 @@ void main() {
         ]));
     // Tos.root.user("chen56").repository("note").tree.branch("main").file("a/b/c.dart");
     // Tos.user_repository_tree_branch_file(user:"chen56",repository:"note",branch:"main",file:"a/b");
-    void match(String path, {required ({String matched, Map<String, String> params}) expected}) {
+    void match(String path, {required ({String location, Map<String, String> params}) expected}) {
       var match = router.match(path);
-      expect(match.to.path, equals(expected.matched));
+      expect(match.to.path, equals(expected.location));
       expect(match.params, equals(expected.params));
     }
 
     test('static', () {
-      match("/", expected: (matched: "/", params: {}));
+      match("/", expected: (location: "/", params: {}));
 
-      match("/settings", expected: (matched: "/settings", params: {}));
+      match("/settings", expected: (location: "/settings", params: {}));
       // end with '/'
-      match("/settings/", expected: (matched: "/settings", params: {}));
+      match("/settings/", expected: (location: "/settings", params: {}));
 
-      match("/settings/profile", expected: (matched: "/settings/profile", params: {}));
+      match("/settings/profile", expected: (location: "/settings/profile", params: {}));
       // end with '/'
-      match("/settings/profile/", expected: (matched: "/settings/profile", params: {}));
+      match("/settings/profile/", expected: (location: "/settings/profile", params: {}));
     });
 
     test('dynamic', () {
       /// dynamic
-      match("/flutter", expected: (matched: "/[user]", params: {"user": "flutter"}));
+      match("/flutter", expected: (location: "/[user]", params: {"user": "flutter"}));
       // end with '/'
-      match("/flutter/", expected: (matched: "/[user]", params: {"user": "flutter"}));
+      match("/flutter/", expected: (location: "/[user]", params: {"user": "flutter"}));
 
       match("/flutter/flutter",
-          expected: (matched: "/[user]/[repository]", params: {"user": "flutter", "repository": "flutter"}));
+          expected: (location: "/[user]/[repository]", params: {"user": "flutter", "repository": "flutter"}));
       match("/flutter/packages",
-          expected: (matched: "/[user]/[repository]", params: {"user": "flutter", "repository": "packages"}));
+          expected: (location: "/[user]/[repository]", params: {"user": "flutter", "repository": "packages"}));
 
       match("/flutter/packages/tree",
-          expected: (matched: "/[user]/[repository]/tree", params: {"user": "flutter", "repository": "packages"}));
+          expected: (location: "/[user]/[repository]/tree", params: {"user": "flutter", "repository": "packages"}));
 
       match("/flutter/packages/tree/main", expected: (
-        matched: "/[user]/[repository]/tree/[branch]",
+        location: "/[user]/[repository]/tree/[branch]",
         params: {"user": "flutter", "repository": "packages", "branch": "main"}
       ));
     });
 
     test('dynamicAll', () {
       match("/flutter/packages/tree/main/b/c.dart", expected: (
-        matched: "/[user]/[repository]/tree/[branch]/[...file]",
+        location: "/[user]/[repository]/tree/[branch]/[...file]",
         params: {"user": "flutter", "repository": "packages", "branch": "main", "file": "b/c.dart"}
       ));
       // end with '/'
       match("/flutter/packages/tree/main/b/c.dart/", expected: (
-        matched: "/[user]/[repository]/tree/[branch]/[...file]",
+        location: "/[user]/[repository]/tree/[branch]/[...file]",
         params: {"user": "flutter", "repository": "packages", "branch": "main", "file": "b/c.dart/"}
       ));
     });
 
     test('priority', () {
       /// static 目录名 优先级高于 dynamic 目录名，同级中既有动态又有静态目录名时，优先匹配static
-      match("/settings", expected: (matched: "/settings", params: {}));
-      match("/chen56", expected: (matched: "/[user]", params: {"user": "chen56"}));
+      match("/settings", expected: (location: "/settings", params: {}));
+      match("/chen56", expected: (location: "/[user]", params: {"user": "chen56"}));
     });
   });
   group("ToRouter.parse 404", () {

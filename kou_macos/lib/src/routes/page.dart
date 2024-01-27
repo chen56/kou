@@ -6,7 +6,7 @@ import 'package:kou_macos/src/routes/machines/page.dart';
 class ToRoot extends PageSpec {
   ToRoot();
 
-  factory ToRoot.parse(PageSpec parent, MatchTo to) {
+  factory ToRoot.parse(PageSpec parent, ToLocation to) {
     return ToRoot();
   }
 

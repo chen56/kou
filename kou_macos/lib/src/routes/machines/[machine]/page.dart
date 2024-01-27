@@ -7,7 +7,7 @@ class ToMachine extends PageSpec {
 
   ToMachine({required this.parent, required this.machine});
 
-  factory ToMachine.parse(PageSpec parent, MatchTo to) {
+  factory ToMachine.parse(PageSpec parent, ToLocation to) {
     String? machine = to.params["machine"];
     assert(machine != null, "machine arg should not be null");
 
@@ -22,7 +22,7 @@ class ToMachine extends PageSpec {
 
   @override
   Widget build(BuildContext context) {
-    return Text("/machine page : $machine");
+    return Text("/machine page : [$machine]");
   }
 }
 

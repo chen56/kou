@@ -9,7 +9,7 @@ class ToMachines extends PageSpec {
 
   ToMachine machine({required String machine}) => ToMachine(parent: this, machine: machine);
 
-  factory ToMachines.parse(PageSpec parent, MatchTo to) {
+  factory ToMachines.parse(PageSpec parent, ToLocation to) {
     return (parent as ToRoot).machines;
   }
 

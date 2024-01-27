@@ -38,7 +38,7 @@ ref: https://github.com/react-navigation/react-navigation
 
 typedef LayoutBuilder = Widget Function(BuildContext context, RouteState state, Widget content);
 typedef PageBuilder = Widget Function(BuildContext context, RouteState state);
-typedef PageSpecBuilder = PageSpec Function(PageSpec parent, MatchTo to);
+typedef PageSpecBuilder = PageSpec Function(PageSpec parent, ToLocation to);
 
 /// static type route instance
 abstract class PageSpec {
@@ -72,15 +72,15 @@ class ToRouter {
     return result!.router;
   }
 
-  MatchTo matchUri(Uri uri) {
+  ToLocation matchUri(Uri uri) {
     assert(uri.path.startsWith("/"));
-    if (uri.path == "/") return MatchTo._(uri: uri, to: root);
+    if (uri.path == "/") return ToLocation._(uri: uri, to: root);
 
     Map<String, String> params = {};
     return root._match(uri: uri, segments: uri.pathSegments, params: params);
   }
 
-  MatchTo match(String uri) {
+  ToLocation match(String uri) {
     return matchUri(Uri.parse(uri));
   }
 
@@ -134,7 +134,7 @@ enum LayoutRetry {
   up;
 }
 
-enum ToNodeType {
+enum PathSegmentType {
   /// 正常路径片段: /settings
   static,
 
@@ -147,8 +147,8 @@ enum ToNodeType {
   ///     /file/a/b/c.txt -> path==a/b/c.txt
   dynamicAll;
 
-  static ToNodeType parse(String name) {
-    return ToNodeType.static;
+  static PathSegmentType parse(String name) {
+    return PathSegmentType.static;
   }
 }
 
@@ -159,12 +159,10 @@ class To {
     this.part, {
     LayoutBuilder? layout,
     this.layoutRetry = LayoutRetry.none,
-    PageBuilder? page,
     required PageSpecBuilder pageSpecBuilder,
     PageBuilder? notFound,
     this.children = const [],
   })  : assert(part == "/" || !part.contains("/"), "part:'$part' assert fail"),
-        _page = page,
         _layout = layout,
         _pageSpecBuilder = pageSpecBuilder {
     var parsed = _parse(part);
@@ -178,12 +176,11 @@ class To {
 
   final String part;
   late final String _paramName;
-  late final ToNodeType _paramType;
+  late final PathSegmentType _paramType;
 
   To? _parent;
   final PageSpecBuilder _pageSpecBuilder;
   final LayoutBuilder? _layout;
-  final PageBuilder? _page;
   final LayoutRetry layoutRetry;
   final List<To> children;
 
@@ -197,15 +194,16 @@ class To {
 
   To? _matchChild({required String segment}) {
     To? matched =
-        children.where((e) => e._paramType == ToNodeType.static).where((e) => segment == e._paramName).firstOrNull;
+        children.where((e) => e._paramType == PathSegmentType.static).where((e) => segment == e._paramName).firstOrNull;
     if (matched != null) return matched;
-    matched =
-        children.where((e) => e._paramType == ToNodeType.dynamic || e._paramType == ToNodeType.dynamicAll).firstOrNull;
+    matched = children
+        .where((e) => e._paramType == PathSegmentType.dynamic || e._paramType == PathSegmentType.dynamicAll)
+        .firstOrNull;
     if (matched != null) return matched;
     return null;
   }
 
-  MatchTo _match({
+  ToLocation _match({
     required Uri uri,
     required List<String> segments,
     required Map<String, String> params,
@@ -216,49 +214,45 @@ class To {
 
     // 忽略后缀'/'
     // next=="" 代表最后以 '/' 结尾,当前 segments==[""]
-    if (_paramType == ToNodeType.static && next == "") {
-      return MatchTo._(uri: uri, to: this, params: params);
+    if (_paramType == PathSegmentType.static && next == "") {
+      return ToLocation._(uri: uri, to: this, params: params);
     }
 
     To? matchedNext = _matchChild(segment: next);
     if (matchedNext == null) {
-      return MatchTo._(uri: uri, to: this, params: params, isNotFound: true);
+      return ToLocation._(uri: uri, to: this, params: params, isNotFound: true);
     }
 
-    if (matchedNext._paramType == ToNodeType.dynamicAll) {
+    if (matchedNext._paramType == PathSegmentType.dynamicAll) {
       // /tree/[...file]
       //     /tree/x/y   --> {"file":"x/y"}
       //     /tree/x/y/  --> {"file":"x/y/"}
       // dynamicAll param must be last
       params[matchedNext._paramName] = segments.join("/");
-      return MatchTo._(uri: uri, to: matchedNext, params: params);
+      return ToLocation._(uri: uri, to: matchedNext, params: params);
     } else {
       if (next == "") {
-        return MatchTo._(uri: uri, to: this, params: params);
+        return ToLocation._(uri: uri, to: this, params: params);
       }
-      if (matchedNext._paramType == ToNodeType.dynamic) {
+      if (matchedNext._paramType == PathSegmentType.dynamic) {
         params[matchedNext._paramName] = next;
       }
     }
 
     if (rest.isEmpty) {
-      return MatchTo._(uri: uri, to: matchedNext, params: params);
+      return ToLocation._(uri: uri, to: matchedNext, params: params);
     }
 
     return matchedNext._match(uri: uri, segments: rest, params: params);
   }
 
-  Widget build(BuildContext context) {
-    var state = RouteState();
-    var content = _page!(context, state);
-    for (var to in listToRoot) {
-      if (to._layout != null) {
-        content = to._layout!(context, state, content);
-      }
-    }
-    return content;
-  }
-
+  /// tree to list
+  /// /a
+  ///   - /a/1
+  ///   - /a/2
+  ///
+  /// a.toList(includeThis:true)
+  ///          => [/a,/a/1,/a/2]
   List<To> toList({
     bool includeThis = true,
     bool Function(To path)? where,
@@ -282,11 +276,11 @@ class To {
   /// parse("user")       -->  (name:"user",type:ToNodeType.normal)
   /// parse("[id]")       -->  (name:"id",  type:ToNodeType.dynamic)
   /// parse("[...path]")  -->  (name:"path",type:ToNodeType.dynamicAll)
-  static (String, ToNodeType) _parse(String pattern) {
+  static (String, PathSegmentType) _parse(String pattern) {
     assert(pattern.isNotEmpty);
 
     if (pattern[0] != "[" || pattern[pattern.length - 1] != "]") {
-      return (pattern, ToNodeType.static);
+      return (pattern, PathSegmentType.static);
     }
 
     assert(pattern != "[]");
@@ -297,9 +291,9 @@ class To {
     final removeBrackets = pattern.substring(1, pattern.length - 1);
 
     if (removeBrackets.startsWith("...")) {
-      return (removeBrackets.substring(3), ToNodeType.dynamicAll);
+      return (removeBrackets.substring(3), PathSegmentType.dynamicAll);
     } else {
-      return (removeBrackets, ToNodeType.dynamic);
+      return (removeBrackets, PathSegmentType.dynamic);
     }
   }
 
@@ -319,7 +313,7 @@ ${children.map((e) => e._toStringDeep(level: level + 1)).join("\n")}
 ${"  " * level}</Route>''';
   }
 
-  PageSpec _toPageSpec(PageSpec rootPageSpec, MatchTo matchTo) {
+  PageSpec _toPageSpec(PageSpec rootPageSpec, ToLocation matchTo) {
     if (isRoot) {
       return _pageSpecBuilder(rootPageSpec, matchTo);
     }
@@ -328,13 +322,18 @@ ${"  " * level}</Route>''';
   }
 }
 
-class MatchTo {
+class ToLocation {
   final To to;
   final Uri uri;
   final Map<String, String> params;
-  final bool isNotFound; // todo change to isFound;
+  final bool isNotFound; // todo change to NotFoundException;
 
-  MatchTo._({required this.uri, required this.to, this.params = const {}, this.isNotFound = false});
+  ToLocation._({
+    required this.uri,
+    required this.to,
+    this.params = const {},
+    this.isNotFound = false,
+  });
 }
 
 /// this class only use for store  [router] ,
@@ -357,16 +356,27 @@ class _RouterScope extends StatelessWidget {
 class _ToRouteInformation {
   static int pageKeyGen = 0;
 
-  final MatchTo matched;
+  final ToLocation location;
   final PageSpec pageSpec;
 
-  _ToRouteInformation({required this.matched, required this.pageSpec});
+  _ToRouteInformation({required this.location, required this.pageSpec});
 
-  get uri => matched.uri;
+  get uri => location.uri;
 
-  // todo move Build to PageSpec
   Page<dynamic> build(BuildContext context) {
-    return MaterialPage(key: ValueKey(pageKeyGen++), child: pageSpec.build(context));
+    var state = RouteState();
+    var content = pageSpec.build(context);
+    for (var x in location.to.listToRoot) {
+      if (x._layout != null) {
+        content = x._layout!(context, state, content);
+      }
+    }
+    return MaterialPage(key: ValueKey(pageKeyGen++), child: content);
+  }
+
+  @override
+  String toString() {
+    return "uri:'${location.uri}'";
   }
 }
 
@@ -378,9 +388,9 @@ class _RouteInformationParser extends RouteInformationParser<_ToRouteInformation
   @override
   Future<_ToRouteInformation> parseRouteInformation(RouteInformation routeInformation) {
     // todo Simplify parse pageSpec
-    MatchTo matchTo = router.matchUri(routeInformation.uri);
-    PageSpec pageSpec = matchTo.to._toPageSpec(router._rootPageSpec, matchTo);
-    return SynchronousFuture(_ToRouteInformation(matched: matchTo, pageSpec: pageSpec));
+    ToLocation location = router.matchUri(routeInformation.uri);
+    PageSpec pageSpec = location.to._toPageSpec(router._rootPageSpec, location);
+    return SynchronousFuture(_ToRouteInformation(location: location, pageSpec: pageSpec));
   }
 
   @override
@@ -435,7 +445,6 @@ class _RouterDelegate extends RouterDelegate<_ToRouteInformation>
       pages: stack.map((e) => e.build(context)).toList(),
     );
   }
-
 
   @override
   Widget build(BuildContext context) {
