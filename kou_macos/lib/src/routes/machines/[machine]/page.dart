@@ -26,6 +26,3 @@ class ToMachine extends PageSpec {
   }
 }
 
-Widget page(BuildContext context, RouteState state) {
-  return const Text("/machine page");
-}

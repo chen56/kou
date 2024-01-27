@@ -23,7 +23,3 @@ class ToRoot extends PageSpec {
   @override
   ToRoot get parent => this;
 }
-
-Widget page(BuildContext context, RouteState state) {
-  return const Text("/  root page");
-}
