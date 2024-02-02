@@ -26,3 +26,21 @@ class ToMachine extends PageSpec {
   }
 }
 
+class ToMachine2 extends TypedRoute {
+  ToMachine2({required this.parent}) : super("[machine]");
+
+  factory ToMachine2.parse(PageSpec parent, ToLocation to) {
+    String? machine = to.params["machine"];
+    assert(machine != null, "machine arg should not be null");
+
+    return (parent as ToMachines2).machine;
+  }
+
+  @override
+  final ToMachines2 parent;
+
+  @override
+  Widget build(BuildContext context) {
+    return const Text("/machine page : ");
+  }
+}

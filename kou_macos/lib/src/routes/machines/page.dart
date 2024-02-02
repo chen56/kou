@@ -24,3 +24,18 @@ class ToMachines extends PageSpec {
     return const Text("/machine page");
   }
 }
+
+class ToMachines2 extends TypedRoute {
+  late final ToMachine2 machine;
+
+  ToMachines2({required this.parent}) : super("machines") {
+    machine = add(ToMachine2(parent: this));
+  }
+
+  factory ToMachines2.parse(PageSpec parent, ToLocation to) {
+    return (parent as ToRoot2).machines;
+  }
+
+  @override
+  final ToRoot2 parent;
+}

@@ -23,3 +23,11 @@ class ToRoot extends PageSpec {
   @override
   ToRoot get parent => this;
 }
+
+class ToRoot2 extends TypedRoute {
+  late final ToMachines2 machines;
+
+  ToRoot2() : super("/") {
+    machines = add(ToMachines2(parent: this));
+  }
+}

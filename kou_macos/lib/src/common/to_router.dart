@@ -152,24 +152,59 @@ enum PathSegmentType {
   }
 }
 
+@Deprecated("temp stub use")
+class TODORemove extends PageSpec {
+  TODORemove();
+
+  factory TODORemove.parse(PageSpec parent, ToLocation to) {
+    return TODORemove();
+  }
+
+  @override
+  Uri get uri => Uri.parse("/");
+
+  @override
+  Widget build(BuildContext context) {
+    return const Text("/  root page");
+  }
+
+  @override
+  TODORemove get parent => this;
+}
+
+class TypedRoute extends To {
+  TypedRoute(
+    super.part, {
+    super.layout,
+    super.layoutRetry,
+    super.notFound,
+    super.children,
+  }) : super(pageSpecBuilder: TODORemove.parse);
+
+  R add<R extends TypedRoute>(R route) {
+    route._parent = this;
+    children.add(route);
+    return route;
+  }
+}
+
 /// To == go_router.GoRoute
 /// 官方的go_router内部略显复杂，且没有我们想要的layout等功能，所以自定一个简化版的to_router
 class To {
-  To(
-    this.part, {
-    LayoutBuilder? layout,
-    this.layoutRetry = LayoutRetry.none,
-    required PageSpecBuilder pageSpecBuilder,
-    PageBuilder? notFound,
-    this.children = const [],
-  })  : assert(part == "/" || !part.contains("/"), "part:'$part' assert fail"),
-        _layout = layout,
-        _pageSpecBuilder = pageSpecBuilder {
+  To(this.part,
+      {LayoutBuilder? layout,
+      this.layoutRetry = LayoutRetry.none,
+      required this.pageSpecBuilder,
+      PageBuilder? notFound,
+      List<To>? children})
+      : assert(part == "/" || !part.contains("/"), "part:'$part' assert fail"),
+        _layout = layout {
     var parsed = _parse(part);
     _paramName = parsed.$1;
     _paramType = parsed.$2;
+    this.children = children ?? List.empty(growable: true);
 
-    for (var route in children) {
+    for (var route in this.children) {
       route._parent = this;
     }
   }
@@ -179,10 +214,10 @@ class To {
   late final PathSegmentType _paramType;
 
   To? _parent;
-  final PageSpecBuilder _pageSpecBuilder;
+  final PageSpecBuilder pageSpecBuilder;
   final LayoutBuilder? _layout;
   final LayoutRetry layoutRetry;
-  final List<To> children;
+  late final List<To> children;
 
   bool get isRoot => _parent == null;
 
@@ -315,10 +350,10 @@ ${"  " * level}</Route>''';
 
   PageSpec _toPageSpec(PageSpec rootPageSpec, ToLocation matchTo) {
     if (isRoot) {
-      return _pageSpecBuilder(rootPageSpec, matchTo);
+      return pageSpecBuilder(rootPageSpec, matchTo);
     }
     var parentStaticType = _parent!._toPageSpec(rootPageSpec, matchTo);
-    return _pageSpecBuilder(parentStaticType, matchTo);
+    return pageSpecBuilder(parentStaticType, matchTo);
   }
 }
 

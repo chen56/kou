@@ -7,6 +7,7 @@ import 'package:kou_macos/src/routes/machines/page.dart';
 import 'package:kou_macos/src/routes/page.dart';
 
 final rootRoute = ToRoot();
+final rootRoute2 = ToRoot2();
 
 ToRouter createRouter() {
   To r = To("/", pageSpecBuilder: ToRoot.parse, layout: root_layout.layout, children: [
