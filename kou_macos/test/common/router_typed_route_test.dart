@@ -11,7 +11,6 @@ import 'package:kou_macos/src/routes/machines/[machine]/page.dart';
 
 void main() {
   var router = createRouter();
-  print(rootRoute2.machines.toString(deep: true));
   group("static type route use", () {
     test('route.uri', () {
       expect(rootRoute.uri.toString(), equals("/"));

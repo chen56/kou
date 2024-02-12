@@ -27,7 +27,7 @@ ToRouter createRouter() {
       To("[machine]", pageSpecBuilder: ToMachine.parse),
     ]),
   ]);
-  return ToRouter(root: rootRoute2, rootToPage: rootRoute);
+  return ToRouter(root: r, rootToPage: rootRoute);
 }
 
 ToRouter createRouter2() {
