@@ -29,7 +29,7 @@ class App extends StatefulWidget {
 }
 
 class _AppState extends State<App> {
-  final ToRouter router = createRouter();
+  final ToRouter router = createRouter2();
 
   @override
   Widget build(BuildContext context) {
@@ -38,7 +38,9 @@ class _AppState extends State<App> {
       theme: ThemeData(colorScheme: const ColorScheme.light(), useMaterial3: true),
       darkTheme: ThemeData(colorScheme: const ColorScheme.dark(), useMaterial3: true),
       routerConfig: router.toRouterConfig(
-          initial: rootRoute.machines.machine(machine: "lan").uri, navigatorKey: App.navigatorKey),
+          // todo rootRoute2.machines.machine.create
+          initial: rootRoute2.machines.machine.create(machine: "lan"),
+          navigatorKey: App.navigatorKey),
     );
   }
 }

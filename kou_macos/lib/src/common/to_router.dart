@@ -36,27 +36,23 @@ ref: https://github.com/react-navigation/react-navigation
     我
  */
 
-typedef LayoutBuilder = Widget Function(BuildContext context, RouteState state, Widget content);
-typedef PageBuilder = Widget Function(BuildContext context, RouteState state);
-typedef PageSpecBuilder = PageSpec Function(PageSpec parent, ToLocation to);
+typedef ToLayoutBuilder = Widget Function(BuildContext context, ToLocation state, Widget content);
+typedef PageBuilder = Widget Function(BuildContext context, ToLocation location);
+typedef PageSpecBuilder = PageSpec Function(PageSpec parent, ToLocation location);
 
-/// static type route instance
-abstract class PageSpec {
-  PageSpec get parent;
-
-  bool get isRoot => parent == this;
-
-  Uri get uri;
-
-  Widget build(BuildContext context);
+class NotFound extends ArgumentError {
+  NotFound({required Uri invalidValue, String name = "uri", String message = "Not Found"})
+      : super.value(invalidValue, name, message);
 }
+
+ToLayoutBuilder _emptyLayoutBuilder = (BuildContext context, ToLocation location, Widget content) {
+  return content;
+};
 
 extension UriExt on Uri {
   /// Creates a new `Uri` based on this one, but with some parts replaced.
   Uri join(String child) => replace(pathSegments: ["", ...pathSegments, child]);
 }
-
-class RouteState {}
 
 class ToRouter {
   final To root;
@@ -172,39 +168,31 @@ class TODORemove extends PageSpec {
   TODORemove get parent => this;
 }
 
-class TypedRoute extends To {
-  TypedRoute(
-    super.part, {
-    super.layout,
-    super.layoutRetry,
-    super.notFound,
-    super.children,
-  }) : super(pageSpecBuilder: TODORemove.parse);
+/// static type route instance
+abstract class PageSpec {
+  PageSpec get parent;
 
-  R add<R extends TypedRoute>(R route) {
-    route._parent = this;
-    children.add(route);
-    return route;
-  }
+  Uri get uri;
+
+  Widget build(BuildContext context);
 }
 
 /// To == go_router.GoRoute
 /// 官方的go_router内部略显复杂，且没有我们想要的layout等功能，所以自定一个简化版的to_router
 class To {
   To(this.part,
-      {LayoutBuilder? layout,
+      {ToLayoutBuilder? layout,
       this.layoutRetry = LayoutRetry.none,
       required this.pageSpecBuilder,
       PageBuilder? notFound,
-      List<To>? children})
+      this.children = const []})
       : assert(part == "/" || !part.contains("/"), "part:'$part' assert fail"),
-        _layout = layout {
+        _layout = layout ?? _emptyLayoutBuilder {
     var parsed = _parse(part);
     _paramName = parsed.$1;
     _paramType = parsed.$2;
-    this.children = children ?? List.empty(growable: true);
 
-    for (var route in this.children) {
+    for (var route in children) {
       route._parent = this;
     }
   }
@@ -215,9 +203,12 @@ class To {
 
   To? _parent;
   final PageSpecBuilder pageSpecBuilder;
-  final LayoutBuilder? _layout;
+  final ToLayoutBuilder _layout;
+
   final LayoutRetry layoutRetry;
   late final List<To> children;
+
+  ToLayoutBuilder get layout => _layout;
 
   bool get isRoot => _parent == null;
 
@@ -226,6 +217,10 @@ class To {
   List<To> get ancestors => isRoot ? [] : [_parent!, ..._parent!.ancestors];
 
   List<To> get listToRoot => [this, ...ancestors];
+
+  To child(String part) {
+    return children.singleWhere((e) => e.part == part);
+  }
 
   To? _matchChild({required String segment}) {
     To? matched =
@@ -255,6 +250,8 @@ class To {
 
     To? matchedNext = _matchChild(segment: next);
     if (matchedNext == null) {
+      // throw NotFound(invalidValue: uri);
+      // todo remove :
       return ToLocation._(uri: uri, to: this, params: params, isNotFound: true);
     }
 
@@ -332,6 +329,13 @@ class To {
     }
   }
 
+  @protected
+  Widget build(BuildContext context, ToLocation location) {
+    return const Text("");
+  }
+
+  // Widget buildLayout(BuildContext context, RouteParam state, Widget content) {}
+
   @override
   String toString({bool deep = false}) {
     if (!deep) return "<Route path='$path' children.length=${children.length} />";
@@ -388,22 +392,21 @@ class _RouterScope extends StatelessWidget {
   }
 }
 
-class _ToRouteInformation {
+class RouteParam {
   static int pageKeyGen = 0;
 
   final ToLocation location;
   final PageSpec pageSpec;
 
-  _ToRouteInformation({required this.location, required this.pageSpec});
+  RouteParam({required this.location, required this.pageSpec});
 
   get uri => location.uri;
 
   Page<dynamic> build(BuildContext context) {
-    var state = RouteState();
-    var content = pageSpec.build(context);
+    var content = location.to.build(context, location);
     for (var x in location.to.listToRoot) {
-      if (x._layout != null) {
-        content = x._layout!(context, state, content);
+      if (x.layout != _emptyLayoutBuilder) {
+        content = x.layout(context, location, content);
       }
     }
     return MaterialPage(key: ValueKey(pageKeyGen++), child: content);
@@ -415,29 +418,29 @@ class _ToRouteInformation {
   }
 }
 
-class _RouteInformationParser extends RouteInformationParser<_ToRouteInformation> {
+class _RouteInformationParser extends RouteInformationParser<RouteParam> {
   final ToRouter router;
 
   _RouteInformationParser({required this.router});
 
   @override
-  Future<_ToRouteInformation> parseRouteInformation(RouteInformation routeInformation) {
+  Future<RouteParam> parseRouteInformation(RouteInformation routeInformation) {
     // todo Simplify parse pageSpec
     ToLocation location = router.matchUri(routeInformation.uri);
     PageSpec pageSpec = location.to._toPageSpec(router._rootPageSpec, location);
-    return SynchronousFuture(_ToRouteInformation(location: location, pageSpec: pageSpec));
+    return SynchronousFuture(RouteParam(location: location, pageSpec: pageSpec));
   }
 
   @override
-  RouteInformation? restoreRouteInformation(_ToRouteInformation configuration) {
+  RouteInformation? restoreRouteInformation(RouteParam configuration) {
     return RouteInformation(uri: configuration.uri);
   }
 }
 
-class _RouterDelegate extends RouterDelegate<_ToRouteInformation>
-    with ChangeNotifier, PopNavigatorRouterDelegateMixin<_ToRouteInformation> {
+class _RouterDelegate extends RouterDelegate<RouteParam>
+    with ChangeNotifier, PopNavigatorRouterDelegateMixin<RouteParam> {
   final ToRouter router;
-  final List<_ToRouteInformation> stack;
+  final List<RouteParam> stack;
 
   @override
   final GlobalKey<NavigatorState> navigatorKey;
@@ -448,18 +451,18 @@ class _RouterDelegate extends RouterDelegate<_ToRouteInformation>
   }) : stack = [];
 
   @override
-  Future<void> setNewRoutePath(_ToRouteInformation configuration) {
+  Future<void> setNewRoutePath(RouteParam configuration) {
     stack.add(configuration);
     return SynchronousFuture(null);
   }
 
   @override
-  Future<void> setRestoredRoutePath(_ToRouteInformation configuration) {
+  Future<void> setRestoredRoutePath(RouteParam configuration) {
     return setNewRoutePath(configuration);
   }
 
   @override
-  _ToRouteInformation? get currentConfiguration {
+  RouteParam? get currentConfiguration {
     return stack.isEmpty ? null : stack.last;
   }
 

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:kou_macos/src/common/to_router.dart';
 import 'package:kou_macos/src/routes.dart';
 
-Widget layout(BuildContext context, RouteState state, Widget content) {
+Widget layout(BuildContext context, ToLocation location, Widget content) {
   return _RootLayout(content: content);
 }
 

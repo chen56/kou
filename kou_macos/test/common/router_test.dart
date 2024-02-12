@@ -10,9 +10,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:kou_macos/src/common/to_router.dart';
 import 'package:kou_macos/src/routes/page.dart';
 
-PageSpec _parser(PageSpec parent, ToLocation to) => throw Exception("not here");
+PageSpec _parser(PageSpec parent, ToLocation location) => throw Exception("not here");
 
-Widget _notFound(BuildContext context, RouteState state) => const Text("404 not found");
+Widget _notFound(BuildContext context, ToLocation location) => const Text("404 not found");
 
 void main() {
   group("ToRouter.parse ok", () {
