@@ -1,6 +1,5 @@
 import 'package:file/file.dart';
 import 'package:flutter/material.dart';
-import 'package:kou_macos/src/common/to_router.dart';
 import 'package:kou_macos/src/conf.dart';
 import 'package:kou_macos/src/routes.dart';
 
@@ -29,17 +28,15 @@ class App extends StatefulWidget {
 }
 
 class _AppState extends State<App> {
-  final ToRouter router = createRouter2();
-
   @override
   Widget build(BuildContext context) {
     return MaterialApp.router(
       title: widget.title,
       theme: ThemeData(colorScheme: const ColorScheme.light(), useMaterial3: true),
       darkTheme: ThemeData(colorScheme: const ColorScheme.dark(), useMaterial3: true),
-      routerConfig: router.toRouterConfig(
+      routerConfig: routes.router.toRouterConfig(
           // todo rootRoute2.machines.machine.create
-          initial: rootRoute2.machines.machine.create(machine: "lan"),
+          initial: Uri.parse("/machines/machineX"),
           navigatorKey: App.navigatorKey),
     );
   }

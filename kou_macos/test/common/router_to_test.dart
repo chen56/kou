@@ -5,33 +5,30 @@
 // gestures. You can also use WidgetTester to find child widgets in the widget
 // tree, read text, and verify that the values of widget properties are correct.
 
+import 'package:checks/checks.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kou_macos/src/common/to_router.dart';
-import 'package:kou_macos/src/routes/page.dart';
-
-PageSpec _parser(PageSpec parent, ToLocation location) => throw Exception("not here");
 
 Widget _notFound(BuildContext context, ToLocation location) => const Text("404 not found");
 
 void main() {
   group("ToRouter.parse ok", () {
     var router = ToRouter(
-        rootToPage: ToRoot(), //stub
-        root: To("/", pageSpecBuilder: _parser, children: [
-          To("settings", pageSpecBuilder: _parser, children: [
-            To("profile", pageSpecBuilder: _parser),
-          ]),
-          To("[user]", pageSpecBuilder: _parser, children: [
-            To("[repository]", pageSpecBuilder: _parser, children: [
-              To("tree", pageSpecBuilder: _parser, children: [
-                To("[branch]", pageSpecBuilder: _parser, children: [
-                  To("[...file]", pageSpecBuilder: _parser),
-                ]),
-              ]),
+        root: To("/", children: [
+      To("settings", children: [
+        To("profile"),
+      ]),
+      To("[user]", children: [
+        To("[repository]", children: [
+          To("tree", children: [
+            To("[branch]", children: [
+              To("[...file]"),
             ]),
           ]),
-        ]));
+        ]),
+      ]),
+    ]));
     // Tos.root.user("chen56").repository("note").tree.branch("main").file("a/b/c.dart");
     // Tos.user_repository_tree_branch_file(user:"chen56",repository:"note",branch:"main",file:"a/b");
     void match(String path, {required ({String location, Map<String, String> params}) expected}) {
@@ -92,28 +89,35 @@ void main() {
   });
   group("ToRouter.parse 404", () {
     var router = ToRouter(
-      rootToPage: ToRoot(), //stub
-      root: To("/", pageSpecBuilder: _parser, notFound: _notFound, children: [
-        To("settings", pageSpecBuilder: _parser, notFound: _notFound, children: [
-          To("profile", pageSpecBuilder: _parser),
+      root: To("/", notFound: _notFound, children: [
+        To("settings", notFound: _notFound, children: [
+          To("profile"),
         ]),
       ]),
     );
 
-    void match(String path, {required String matched, required Map<String, String> params, bool notFound = false}) {
+    void match(String path, {required String matched, required Map<String, String> params}) {
       var match = router.match(path);
       expect(match.to.path, equals(matched));
       expect(match.params, equals(params));
-      expect(match.isNotFound, equals(notFound));
+    }
+
+    void checkNotFound({required String uri}) {
+      try {
+        router.match(uri);
+        fail("Never");
+      } catch (e) {
+        check(e).isA<NotFoundError>();
+      }
     }
 
     test('404 no_page_found', () {
       // found
-      match("/settings", matched: "/settings", params: {}, notFound: false);
-      match("/settings/profile", matched: "/settings/profile", params: {}, notFound: false);
+      match("/settings", matched: "/settings", params: {});
+      match("/settings/profile", matched: "/settings/profile", params: {});
       // notFound
-      match("/no_exists_path", matched: "/", params: {}, notFound: true);
-      match("/settings/no_exists_path", matched: "/settings", params: {}, notFound: true);
+      checkNotFound(uri: "/no_exists_path");
+      checkNotFound(uri: "/settings/no_exists_path");
     });
   });
 }

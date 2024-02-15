@@ -25,21 +25,20 @@ class ToRoot extends PageSpec {
   ToRoot get parent => this;
 }
 
-class ToRoot2 extends MyRouteBase {
-  static const String key = "/";
-
-  ToRoot2({super.children}) : super(part: key);
-
-  ToMachines2 get machines => child(ToMachines2.key) as ToMachines2;
+final class ToRoot2 with ToHandler {
+  ToRoot2() : super();
 
   @override
-  ToLayoutBuilder get layout => (BuildContext context, ToLocation location, Widget content) {
-        return _RootLayout(content: content);
-      };
+  String get uriTemplate => "/";
+
+  @override
+  Widget? layout(BuildContext context, ToLocation location, Widget content) {
+    return _RootLayout(content: content);
+  }
 
   @override
   Widget build(BuildContext context, ToLocation location) {
-    return Text("$key : ${location.uri}");
+    return Text("$uriTemplate : ${location.uri}");
   }
 }
 

@@ -1,6 +1,5 @@
 import 'package:flutter/widgets.dart';
 import 'package:kou_macos/src/common/to_router.dart';
-import 'package:kou_macos/src/routes.dart';
 import 'package:kou_macos/src/routes/page.dart';
 
 import '[machine]/page.dart';
@@ -26,19 +25,14 @@ class ToMachines extends PageSpec {
   }
 }
 
-class ToMachines2 extends MyRouteBase {
-  static const String key = "machines";
+final class ToMachines2 with ToHandler {
+  ToMachines2() : super();
 
-  ToMachines2({super.children}) : super(part: key);
-
-  factory ToMachines2.parse(PageSpec parent, ToLocation to) {
-    return (parent as ToRoot2).machines;
-  }
-
-  ToMachine2 get machine => child(ToMachine2.key) as ToMachine2;
+  @override
+  String get uriTemplate => "/machines";
 
   @override
   Widget build(BuildContext context, ToLocation location) {
-    return Text("$key : ${location.uri}");
+    return Text("$uriTemplate : ${location.uri}");
   }
 }
