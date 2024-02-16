@@ -7,18 +7,28 @@ import 'package:kou_macos/src/routes/page.dart';
 
 final rootRoute = ToRoot();
 
-Routes routes = Routes.create();
+ToRouter createRouter() {
+  To root = To("/", page: ToRoot.parse, layout: ToRoot.layout, children: [
+    To("machines", page: ToMachines.parse, children: [
+      To("[machine]", page: ToMachine.parse),
+    ]),
+  ]);
+  return ToRouter(root: root);
+}
+
+Routes routes = Routes();
 
 class Routes {
   static List<ToHandler> _handlers = List.empty(growable: true);
 
-  final root = def(ToRoot2());
-  final ToMachines2 machines = def(ToMachines2());
-  final ToMachine2 machines_machine = def(ToMachine2());
-  late To rootTo;
-  late ToRouter router;
+  late final To rootTo;
+  late final ToRouter router;
 
-  Routes.create() {
+  final root = _def(ToRoot2());
+  final machines = _def(ToMachines2());
+  final machines_machine = _def(ToMachine2());
+
+  Routes() {
     rootTo = To.fromHandlers(_handlers);
     router = ToRouter(root: rootTo);
 
@@ -26,7 +36,7 @@ class Routes {
     _handlers = List.empty(growable: true);
   }
 
-  static R def<R extends ToHandler>(R handler) {
+  static R _def<R extends ToHandler>(R handler) {
     _handlers.add(handler);
     return handler;
   }

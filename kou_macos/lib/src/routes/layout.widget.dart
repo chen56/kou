@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:kou_macos/src/common/to_router.dart';
 import 'package:kou_macos/src/routes.dart';
+import 'package:kou_macos/src/routes/machines/[machine]/page.dart';
 
 Widget layout(BuildContext context, ToLocation location, Widget content) {
   return _RootLayout(content: content);
@@ -38,7 +39,7 @@ class _RootLayout extends StatelessWidget {
               scrollDirection: Axis.vertical,
               children: [
                 link("︎︎︎▶ dashboard", rootRoute.uri, Icons.abc),
-                for (var machine in ["machine1", "machine2"]) link("︎︎︎▶ vm1-腾讯云香港", rootRoute.machines.machine(machine: machine).uri, Icons.abc),
+                for (var machine in ["machine1", "machine2"]) link("︎︎︎▶ vm1-腾讯云香港", ToMachine(machine: machine).uri, Icons.abc),
               ],
             ),
           ),

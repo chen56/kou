@@ -37,7 +37,8 @@ ref: https://github.com/react-navigation/react-navigation
  */
 
 typedef PageBuilder = Widget Function(BuildContext context, ToLocation location);
-typedef PageSpecBuilder = PageSpec Function(PageSpec parent, ToLocation location);
+typedef PageSpecBuilder = ToPage Function(ToLocation location);
+typedef LayoutBuilder = Widget Function(BuildContext context, ToLocation location, Widget content);
 
 class NotFoundError extends ArgumentError {
   NotFoundError({required Uri invalidValue, String name = "uri", String message = "Not Found"})
@@ -155,32 +156,34 @@ class _EmptyHandler with ToHandler {
 }
 
 /// static type route instance
-abstract class PageSpec {
-  PageSpec get parent;
-
+abstract class ToPage {
   Uri get uri;
 
   Widget build(BuildContext context);
 }
 
 @Deprecated("temp stub use")
-class TODORemove extends PageSpec {
-  TODORemove();
+class TODORemove extends ToPage {
+  final ToLocation location;
 
-  factory TODORemove.parse(PageSpec parent, ToLocation to) {
-    return TODORemove();
+  TODORemove(this.location);
+
+  factory TODORemove.parse(ToPage parent, ToLocation location) {
+    return TODORemove(location);
   }
 
   @override
-  Uri get uri => Uri.parse("/");
+  Uri get uri => location.uri;
 
   @override
   Widget build(BuildContext context) {
-    return const Text("/  root page");
+    return const Text("...");
   }
 
-  @override
-  TODORemove get parent => this;
+}
+
+ToPage _emptyScreen(ToLocation location) {
+  return TODORemove(location);
 }
 
 /// To == go_router.GoRoute
@@ -195,14 +198,19 @@ class To {
 
   final LayoutRetry layoutRetry;
   late final List<To> children;
+  final PageSpecBuilder pageSpecBuilder;
+  final LayoutBuilder? layout;
 
   To(this.part,
       {this.handler = const _EmptyHandler(),
+      PageSpecBuilder? page,
+      this.layout,
       this.layoutRetry = LayoutRetry.none,
       PageBuilder? notFound,
-        List<To>? children})
+      List<To>? children})
       : assert(part == "/" || !part.contains("/"), "part:'$part' assert fail"),
-        children = children ?? List.empty(growable: true) {
+        children = children ?? List.empty(growable: true),
+        pageSpecBuilder = page ?? _emptyScreen {
     var parsed = _parse(part);
     _paramName = parsed.$1;
     _paramType = parsed.$2;
@@ -236,7 +244,7 @@ class To {
     var findNext = children.where((e) => e.part == name);
     var next = findNext.firstOrNull;
     if (next == null) {
-      next = To(name);
+      next = To(name, page: pageSpecBuilder);
       next._parent = this;
       children.add(next);
     }
@@ -258,14 +266,9 @@ class To {
 
   To? _matchChild({required String segment}) {
     To? matched =
-        children
-            .where((e) => e._paramType == ToType.static)
-            .where((e) => segment == e._paramName)
-            .firstOrNull;
+        children.where((e) => e._paramType == ToType.static).where((e) => segment == e._paramName).firstOrNull;
     if (matched != null) return matched;
-    matched = children
-        .where((e) => e._paramType == ToType.dynamic || e._paramType == ToType.dynamicAll)
-        .firstOrNull;
+    matched = children.where((e) => e._paramType == ToType.dynamic || e._paramType == ToType.dynamicAll).firstOrNull;
     if (matched != null) return matched;
     return null;
   }

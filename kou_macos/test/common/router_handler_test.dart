@@ -8,6 +8,8 @@
 import 'package:flutter/src/widgets/framework.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kou_macos/src/common/to_router.dart';
+import 'package:kou_macos/src/routes.dart';
+import 'package:kou_macos/src/routes/machines/%5Bmachine%5D/page.dart';
 
 class _TestHandler with ToHandler {
   @override
@@ -31,6 +33,14 @@ void main() {
         _TestHandler("/b/bb"),
       ]);
       expect(root.toList(includeThis: true).map((e) => e.path), ['/', '/a', '/a/aa', '/b', '/b/bb']);
+    });
+  });
+
+  group("static type route use", () {
+    test('route.uri', () {
+      expect(rootRoute.uri.toString(), equals("/"));
+      expect(rootRoute.machines.uri.toString(), equals("/machines"));
+      expect(ToMachine(machine: "machine1").uri.toString(), equals("/machines/machine1"));
     });
   });
 }

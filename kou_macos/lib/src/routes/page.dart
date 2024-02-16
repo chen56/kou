@@ -2,27 +2,29 @@
 import 'package:flutter/material.dart';
 import 'package:kou_macos/src/common/to_router.dart';
 import 'package:kou_macos/src/routes.dart';
+import 'package:kou_macos/src/routes/machines/[machine]/page.dart';
 import 'package:kou_macos/src/routes/machines/page.dart';
 
-class ToRoot extends PageSpec {
+class ToRoot extends ToPage {
   ToRoot();
 
-  factory ToRoot.parse(PageSpec parent, ToLocation to) {
+  factory ToRoot.parse(ToLocation to) {
     return ToRoot();
   }
 
-  ToMachines get machines => ToMachines(parent: this);
-
   @override
   Uri get uri => Uri.parse("/");
+
+  static Widget layout(BuildContext context, ToLocation location, Widget content) {
+    return _RootLayout(content: content);
+  }
+
+  ToMachines get machines => ToMachines();
 
   @override
   Widget build(BuildContext context) {
     return const Text("/  root page");
   }
-
-  @override
-  ToRoot get parent => this;
 }
 
 final class ToRoot2 with ToHandler {
@@ -75,7 +77,7 @@ class _RootLayout extends StatelessWidget {
               children: [
                 link("︎︎︎▶ dashboard", rootRoute.uri, Icons.abc),
                 for (var machine in ["machine1", "machine2"])
-                  link("︎︎︎▶ vm1-腾讯云香港", rootRoute.machines.machine(machine: machine).uri, Icons.abc),
+                  link("︎︎︎▶ vm1-腾讯云香港", ToMachine(machine: machine).uri, Icons.abc),
               ],
             ),
           ),
