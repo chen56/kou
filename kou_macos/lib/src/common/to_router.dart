@@ -36,8 +36,7 @@ ref: https://github.com/react-navigation/react-navigation
     我
  */
 
-typedef PageBuilder = Widget Function(BuildContext context, ToLocation location);
-typedef PageSpecBuilder = ToPage Function(ToLocation location);
+typedef PageBuilder = ToPage Function(ToLocation location);
 typedef LayoutBuilder = Widget Function(BuildContext context, ToLocation location, Widget content);
 
 class NotFoundError extends ArgumentError {
@@ -53,7 +52,7 @@ extension UriExt on Uri {
 class ToRouter {
   final To root;
 
-  ToRouter({required this.root}) : assert(root.path == "/");
+  ToRouter({required this.root}) : assert(root.uriTemplate == "/");
 
   static ToRouter of(BuildContext context) {
     var result = context.findAncestorWidgetOfExactType<_RouterScope>();
@@ -198,15 +197,14 @@ class To {
 
   final LayoutRetry layoutRetry;
   late final List<To> children;
-  final PageSpecBuilder pageSpecBuilder;
+  final PageBuilder pageSpecBuilder;
   final LayoutBuilder? layout;
 
   To(this.part,
       {this.handler = const _EmptyHandler(),
-      PageSpecBuilder? page,
+      PageBuilder? page,
       this.layout,
       this.layoutRetry = LayoutRetry.none,
-      PageBuilder? notFound,
       List<To>? children})
       : assert(part == "/" || !part.contains("/"), "part:'$part' assert fail"),
         children = children ?? List.empty(growable: true),
@@ -254,7 +252,7 @@ class To {
 
   bool get isRoot => _parent == null;
 
-  String get path => isRoot ? "/" : path_.join(_parent!.path, part);
+  String get uriTemplate => isRoot ? "/" : path_.join(_parent!.uriTemplate, part);
 
   List<To> get ancestors => isRoot ? [] : [_parent!, ..._parent!.ancestors];
 
@@ -369,16 +367,16 @@ class To {
 
   @override
   String toString({bool deep = false}) {
-    if (!deep) return "<Route path='$path' children.length=${children.length} />";
+    if (!deep) return "<Route path='$uriTemplate' children.length=${children.length} />";
     return _toStringDeep(level: 0);
   }
 
   String _toStringDeep({int level = 0}) {
     if (children.isEmpty) {
-      return "${"  " * level}<Route path='$path' />";
+      return "${"  " * level}<Route path='$uriTemplate' />";
     }
 
-    return '''${"  " * level}<Route path='$path' >
+    return '''${"  " * level}<Route path='$uriTemplate' >
 ${children.map((e) => e._toStringDeep(level: level + 1)).join("\n")}
 ${"  " * level}</Route>''';
   }

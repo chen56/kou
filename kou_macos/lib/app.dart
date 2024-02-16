@@ -1,7 +1,21 @@
 import 'package:file/file.dart';
 import 'package:flutter/material.dart';
+import 'package:kou_macos/src/common/to_router.dart';
 import 'package:kou_macos/src/conf.dart';
-import 'package:kou_macos/src/routes.dart';
+import 'package:kou_macos/src/routes/machines/[machine]/page.dart';
+import 'package:kou_macos/src/routes/machines/page.dart';
+import 'package:kou_macos/src/routes/page.dart';
+
+ToRouter createRouter() {
+  To root = To("/", page: RootPage.parse, layout: RootPage.layout, children: [
+    To("machines", page: MachinesPage.parse, children: [
+      To("[machine]", page: MachinePage.parse),
+    ]),
+  ]);
+  return ToRouter(root: root);
+}
+
+ToRouter router = createRouter();
 
 class KouSystem {
   final Directory dataDir;
@@ -34,10 +48,10 @@ class _AppState extends State<App> {
       title: widget.title,
       theme: ThemeData(colorScheme: const ColorScheme.light(), useMaterial3: true),
       darkTheme: ThemeData(colorScheme: const ColorScheme.dark(), useMaterial3: true),
-      routerConfig: routes.router.toRouterConfig(
-          // todo rootRoute2.machines.machine.create
-          initial: Uri.parse("/machines/machineX"),
-          navigatorKey: App.navigatorKey),
+      routerConfig: router.toRouterConfig(
+        initial: MachinePage(machine: "machineX").uri,
+        navigatorKey: App.navigatorKey,
+      ),
     );
   }
 }

@@ -1,16 +1,16 @@
 import 'package:flutter/widgets.dart';
 import 'package:kou_macos/src/common/to_router.dart';
 
-class ToMachine extends ToPage {
+class MachinePage extends ToPage {
   final String machine;
 
-  ToMachine({required this.machine});
+  MachinePage({required this.machine});
 
-  factory ToMachine.parse(ToLocation to) {
+  factory MachinePage.parse(ToLocation to) {
     String? machine = to.params["machine"];
     assert(machine != null, "machine arg should not be null");
 
-    return ToMachine(machine: machine!);
+    return MachinePage(machine: machine!);
   }
 
   @override
@@ -22,8 +22,8 @@ class ToMachine extends ToPage {
   }
 }
 
-final class ToMachine2 with ToHandler {
-  ToMachine2() : super();
+final class MachineHandler with ToHandler {
+  MachineHandler() : super();
 
   @override
   String get uriTemplate => "/machines/[machine]";

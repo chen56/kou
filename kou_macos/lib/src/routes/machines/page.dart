@@ -3,13 +3,13 @@ import 'package:kou_macos/src/common/to_router.dart';
 
 import '[machine]/page.dart';
 
-class ToMachines extends ToPage {
-  ToMachines();
+class MachinesPage extends ToPage {
+  MachinesPage();
 
-  ToMachine machine({required String machine}) => ToMachine(machine: machine);
+  MachinePage machine({required String machine}) => MachinePage(machine: machine);
 
-  factory ToMachines.parse(ToLocation to) {
-    return ToMachines();
+  factory MachinesPage.parse(ToLocation to) {
+    return MachinesPage();
   }
 
   @override
@@ -21,8 +21,8 @@ class ToMachines extends ToPage {
   }
 }
 
-final class ToMachines2 with ToHandler {
-  ToMachines2() : super();
+final class MachinesHandler with ToHandler {
+  MachinesHandler() : super();
 
   @override
   String get uriTemplate => "/machines";

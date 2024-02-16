@@ -1,15 +1,14 @@
 // ignore_for_file: non_constant_identifier_names,camel_case_types
 import 'package:flutter/material.dart';
 import 'package:kou_macos/src/common/to_router.dart';
-import 'package:kou_macos/src/routes.dart';
 import 'package:kou_macos/src/routes/machines/[machine]/page.dart';
 import 'package:kou_macos/src/routes/machines/page.dart';
 
-class ToRoot extends ToPage {
-  ToRoot();
+class RootPage extends ToPage {
+  RootPage();
 
-  factory ToRoot.parse(ToLocation to) {
-    return ToRoot();
+  factory RootPage.parse(ToLocation to) {
+    return RootPage();
   }
 
   @override
@@ -19,7 +18,7 @@ class ToRoot extends ToPage {
     return _RootLayout(content: content);
   }
 
-  ToMachines get machines => ToMachines();
+  MachinesPage get machines => MachinesPage();
 
   @override
   Widget build(BuildContext context) {
@@ -27,8 +26,8 @@ class ToRoot extends ToPage {
   }
 }
 
-final class ToRoot2 with ToHandler {
-  ToRoot2() : super();
+final class RootHandler with ToHandler {
+  RootHandler() : super();
 
   @override
   String get uriTemplate => "/";
@@ -75,9 +74,9 @@ class _RootLayout extends StatelessWidget {
             child: ListView(
               scrollDirection: Axis.vertical,
               children: [
-                link("︎︎︎▶ dashboard", rootRoute.uri, Icons.abc),
+                link("︎︎︎▶ dashboard", RootPage().uri, Icons.abc),
                 for (var machine in ["machine1", "machine2"])
-                  link("︎︎︎▶ vm1-腾讯云香港", ToMachine(machine: machine).uri, Icons.abc),
+                  link("︎︎︎▶ vm1-腾讯云香港", MachinePage(machine: machine).uri, Icons.abc),
               ],
             ),
           ),

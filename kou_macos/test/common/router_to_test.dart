@@ -6,11 +6,8 @@
 // tree, read text, and verify that the values of widget properties are correct.
 
 import 'package:checks/checks.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kou_macos/src/common/to_router.dart';
-
-Widget _notFound(BuildContext context, ToLocation location) => const Text("404 not found");
 
 void main() {
   group("ToRouter.parse ok", () {
@@ -33,7 +30,7 @@ void main() {
     // Tos.user_repository_tree_branch_file(user:"chen56",repository:"note",branch:"main",file:"a/b");
     void match(String path, {required ({String location, Map<String, String> params}) expected}) {
       var match = router.match(path);
-      expect(match.to.path, equals(expected.location));
+      expect(match.to.uriTemplate, equals(expected.location));
       expect(match.params, equals(expected.params));
     }
 
@@ -89,8 +86,8 @@ void main() {
   });
   group("ToRouter.parse 404", () {
     var router = ToRouter(
-      root: To("/", notFound: _notFound, children: [
-        To("settings", notFound: _notFound, children: [
+      root: To("/", children: [
+        To("settings", children: [
           To("profile"),
         ]),
       ]),
@@ -98,7 +95,7 @@ void main() {
 
     void match(String path, {required String matched, required Map<String, String> params}) {
       var match = router.match(path);
-      expect(match.to.path, equals(matched));
+      expect(match.to.uriTemplate, equals(matched));
       expect(match.params, equals(params));
     }
 
