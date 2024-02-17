@@ -1,12 +1,12 @@
 import 'package:flutter/widgets.dart';
 import 'package:kou_macos/src/common/to_router.dart';
 
-class MachinePage extends StatelessWidget with ToPageMixin {
+class MachinePage extends StatelessWidget with PageMixin {
   final String machine;
 
   MachinePage({super.key, required this.machine});
 
-  factory MachinePage.parse(ToLocation to) {
+  factory MachinePage.content(ToLocation to) {
     String? machine = to.params["machine"];
     assert(machine != null, "machine arg should not be null");
 

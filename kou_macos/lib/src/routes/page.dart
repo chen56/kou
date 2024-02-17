@@ -3,19 +3,22 @@ import 'package:flutter/material.dart';
 import 'package:kou_macos/src/common/to_router.dart';
 import 'package:kou_macos/src/routes/machines/[machine]/page.dart';
 
-class RootPage extends StatelessWidget with ToPageMixin {
+class RootPage extends StatelessWidget with PageMixin {
   RootPage({super.key});
 
-  factory RootPage.parse(ToLocation to) {
+  factory RootPage.content(ToLocation to) {
     return RootPage();
   }
 
   @override
   Uri get uri => Uri.parse("/");
 
-  static Widget layout(BuildContext context, ToLocation location, Widget content) {
-    return _RootLayout(content: content);
+  static Widget layout(BuildContext context, ToLocation location, Widget child) {
+    return _RootLayout(content: child);
   }
+
+  static Page<dynamic> page(BuildContext context, ToLocation loc, Widget child) =>
+      MaterialPage(key: ValueKey(loc.uri.toString()), child: child);
 
   @override
   Widget build(BuildContext context) {

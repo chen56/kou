@@ -3,12 +3,12 @@ import 'package:kou_macos/src/common/to_router.dart';
 
 import '[machine]/page.dart';
 
-class MachinesPage extends StatelessWidget with ToPageMixin {
+class MachinesPage extends StatelessWidget with PageMixin {
   MachinesPage({super.key});
 
   MachinePage machine({required String machine}) => MachinePage(machine: machine);
 
-  factory MachinesPage.parse(ToLocation to) {
+  factory MachinesPage.content(ToLocation to) {
     return MachinesPage();
   }
 

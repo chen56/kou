@@ -36,8 +36,9 @@ ref: https://github.com/react-navigation/react-navigation
     我
  */
 
-typedef PageBuilder = Widget Function(ToLocation location);
-typedef LayoutBuilder = Widget Function(BuildContext context, ToLocation location, Widget content);
+typedef ContentBuilder = Widget Function(ToLocation loc);
+typedef LayoutBuilder = Widget Function(BuildContext context, ToLocation loc, Widget child);
+typedef PageBuilder = Page<dynamic> Function(BuildContext context, ToLocation loc, Widget child);
 
 class NotFoundError extends ArgumentError {
   NotFoundError({required Uri invalidValue, String name = "uri", String message = "Not Found"})
@@ -119,7 +120,7 @@ enum ToType {
 }
 
 /// static type route instance
-mixin ToPageMixin on Widget {
+mixin PageMixin on Widget {
   Uri get uri;
 }
 
@@ -134,13 +135,15 @@ class To {
 
   final LayoutRetry layoutRetry;
   final List<To> children;
-  final PageBuilder? page;
+  final ContentBuilder? content;
   final LayoutBuilder? layout;
+  final PageBuilder? page;
 
   To(
     this.part, {
-    this.page,
+    this.content,
     this.layout,
+    this.page,
     this.layoutRetry = LayoutRetry.none,
     this.children = const [],
   }) : assert(part == "/" || !part.contains("/"), "part:'$part' should be '/' or legal directory name") {
@@ -158,10 +161,6 @@ class To {
   String get uriTemplate => isRoot ? "/" : path_.join(_parent!.uriTemplate, part);
 
   List<To> get ancestors => isRoot ? [] : [_parent!, ..._parent!.ancestors];
-
-  To child(String part) {
-    return children.singleWhere((e) => e.part == part);
-  }
 
   To? _matchChild({required String segment}) {
     To? matched = children.where((e) => e._type == ToType.static).where((e) => segment == e._name).firstOrNull;
@@ -287,8 +286,6 @@ class ToLocation {
   final Uri uri;
   final Map<String, String> params;
 
-  static int _pageKeyGen = 0;
-
   ToLocation._({
     required this.uri,
     required this.to,
@@ -296,16 +293,23 @@ class ToLocation {
   });
 
   Page<dynamic> _buildPage(BuildContext context) {
-    if (to.page == null) {
+    if (to.content == null) {
       throw NotFoundError(invalidValue: uri);
     }
-    Widget content = to.page!(this);
+    Widget widget = to.content!(this);
     for (var x in [to, ...to.ancestors]) {
       if (x.layout != null) {
-        content = x.layout!(context, this, content);
+        widget = x.layout!(context, this, widget);
       }
     }
-    return MaterialPage(key: ValueKey(_pageKeyGen++), child: content);
+    for (var x in [to, ...to.ancestors]) {
+      if (x.page != null) {
+        return x.page!(context, this, widget);
+      }
+    }
+
+    // if not define pageBuilder, give a default page
+    return MaterialPage(key: ValueKey(uri.toString()), child: widget);
   }
 
   @override
