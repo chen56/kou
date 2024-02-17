@@ -287,11 +287,31 @@ class ToLocation {
   final Uri uri;
   final Map<String, String> params;
 
+  static int _pageKeyGen = 0;
+
   ToLocation._({
     required this.uri,
     required this.to,
     this.params = const {},
   });
+
+  Page<dynamic> _buildPage(BuildContext context) {
+    if (to.page == null) {
+      throw NotFoundError(invalidValue: uri);
+    }
+    Widget content = to.page!(this);
+    for (var x in [to, ...to.ancestors]) {
+      if (x.layout != null) {
+        content = x.layout!(context, this, content);
+      }
+    }
+    return MaterialPage(key: ValueKey(_pageKeyGen++), child: content);
+  }
+
+  @override
+  String toString() {
+    return "location:'$uri'";
+  }
 }
 
 /// this class only use for store  [router] ,
@@ -311,56 +331,27 @@ class _RouterScope extends StatelessWidget {
   }
 }
 
-class _RouteInfo {
-  static int pageKeyGen = 0;
-
-  final ToLocation location;
-
-  _RouteInfo({required this.location});
-
-  get uri => location.uri;
-
-  Page<dynamic> build(BuildContext context) {
-    var to = location.to;
-    if (to.page == null) {
-      throw NotFoundError(invalidValue: location.uri);
-    }
-    Widget content = to.page!(location);
-    for (var x in [to, ...to.ancestors]) {
-      if (x.layout != null) {
-        content = x.layout!(context, location, content);
-      }
-    }
-    return MaterialPage(key: ValueKey(pageKeyGen++), child: content);
-  }
-
-  @override
-  String toString() {
-    return "uri:'${location.uri}'";
-  }
-}
-
-class _RouteInformationParser extends RouteInformationParser<_RouteInfo> {
+class _RouteInformationParser extends RouteInformationParser<ToLocation> {
   final ToRouter router;
 
   _RouteInformationParser({required this.router});
 
   @override
-  Future<_RouteInfo> parseRouteInformation(RouteInformation routeInformation) {
+  Future<ToLocation> parseRouteInformation(RouteInformation routeInformation) {
     ToLocation location = router.matchUri(routeInformation.uri);
-    return SynchronousFuture(_RouteInfo(location: location));
+    return SynchronousFuture(location);
   }
 
   @override
-  RouteInformation? restoreRouteInformation(_RouteInfo configuration) {
+  RouteInformation? restoreRouteInformation(ToLocation configuration) {
     return RouteInformation(uri: configuration.uri);
   }
 }
 
-class _RouterDelegate extends RouterDelegate<_RouteInfo>
-    with ChangeNotifier, PopNavigatorRouterDelegateMixin<_RouteInfo> {
+class _RouterDelegate extends RouterDelegate<ToLocation>
+    with ChangeNotifier, PopNavigatorRouterDelegateMixin<ToLocation> {
   final ToRouter router;
-  final List<_RouteInfo> stack;
+  final List<ToLocation> stack;
 
   @override
   final GlobalKey<NavigatorState> navigatorKey;
@@ -371,18 +362,18 @@ class _RouterDelegate extends RouterDelegate<_RouteInfo>
   }) : stack = [];
 
   @override
-  Future<void> setNewRoutePath(_RouteInfo configuration) {
+  Future<void> setNewRoutePath(ToLocation configuration) {
     stack.add(configuration);
     return SynchronousFuture(null);
   }
 
   @override
-  Future<void> setRestoredRoutePath(_RouteInfo configuration) {
+  Future<void> setRestoredRoutePath(ToLocation configuration) {
     return setNewRoutePath(configuration);
   }
 
   @override
-  _RouteInfo? get currentConfiguration {
+  ToLocation? get currentConfiguration {
     return stack.isEmpty ? null : stack.last;
   }
 
@@ -400,7 +391,7 @@ class _RouterDelegate extends RouterDelegate<_RouteInfo>
         notifyListeners();
         return true;
       },
-      pages: stack.map((e) => e.build(context)).toList(),
+      pages: stack.map((e) => e._buildPage(context)).toList(),
     );
   }
 

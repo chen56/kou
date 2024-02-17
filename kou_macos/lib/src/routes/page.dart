@@ -2,7 +2,6 @@
 import 'package:flutter/material.dart';
 import 'package:kou_macos/src/common/to_router.dart';
 import 'package:kou_macos/src/routes/machines/[machine]/page.dart';
-import 'package:kou_macos/src/routes/machines/page.dart';
 
 class RootPage extends StatelessWidget with ToPageMixin {
   RootPage({super.key});
@@ -17,8 +16,6 @@ class RootPage extends StatelessWidget with ToPageMixin {
   static Widget layout(BuildContext context, ToLocation location, Widget content) {
     return _RootLayout(content: content);
   }
-
-  MachinesPage get machines => MachinesPage();
 
   @override
   Widget build(BuildContext context) {
