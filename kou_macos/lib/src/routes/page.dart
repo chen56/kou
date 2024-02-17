@@ -4,8 +4,8 @@ import 'package:kou_macos/src/common/to_router.dart';
 import 'package:kou_macos/src/routes/machines/[machine]/page.dart';
 import 'package:kou_macos/src/routes/machines/page.dart';
 
-class RootPage extends ToPage {
-  RootPage();
+class RootPage extends StatelessWidget with ToPageMixin {
+  RootPage({super.key});
 
   factory RootPage.parse(ToLocation to) {
     return RootPage();
@@ -23,23 +23,6 @@ class RootPage extends ToPage {
   @override
   Widget build(BuildContext context) {
     return const Text("/  root page");
-  }
-}
-
-final class RootHandler with ToHandler {
-  RootHandler() : super();
-
-  @override
-  String get uriTemplate => "/";
-
-  @override
-  Widget? layout(BuildContext context, ToLocation location, Widget content) {
-    return _RootLayout(content: content);
-  }
-
-  @override
-  Widget build(BuildContext context, ToLocation location) {
-    return Text("$uriTemplate : ${location.uri}");
   }
 }
 

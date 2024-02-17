@@ -36,7 +36,7 @@ ref: https://github.com/react-navigation/react-navigation
     我
  */
 
-typedef PageBuilder = ToPage Function(ToLocation location);
+typedef PageBuilder = Widget Function(ToLocation location);
 typedef LayoutBuilder = Widget Function(BuildContext context, ToLocation location, Widget content);
 
 class NotFoundError extends ArgumentError {
@@ -70,19 +70,6 @@ class ToRouter {
 
   ToLocation match(String uri) {
     return matchUri(Uri.parse(uri));
-  }
-
-  /// must exist uri
-  To getUri(Uri uri) {
-    To result = root;
-    for (var segment in uri.pathSegments.where((e) => e != "")) {
-      result = result.children.where((e) => e.part == segment).first;
-    }
-    return result;
-  }
-
-  To get(String uri) {
-    return getUri(Uri.parse(uri));
   }
 
   // [PlatformRouteInformationProvider.initialRouteInformation]
@@ -131,123 +118,39 @@ enum ToType {
   }
 }
 
-abstract mixin class ToHandler {
-  String get uriTemplate;
-
-  @override
-  String toString() => uriTemplate;
-
-  Widget? layout(BuildContext context, ToLocation location, Widget content) => null;
-
-  Widget build(BuildContext context, ToLocation location);
-}
-
-class _EmptyHandler with ToHandler {
-  const _EmptyHandler();
-
-  @override
-  String get uriTemplate => "/_empty_route";
-
-  @override
-  Widget build(BuildContext context, ToLocation location) {
-    return const Text("...");
-  }
-}
-
 /// static type route instance
-abstract class ToPage {
+mixin ToPageMixin on Widget {
   Uri get uri;
-
-  Widget build(BuildContext context);
-}
-
-@Deprecated("temp stub use")
-class TODORemove extends ToPage {
-  final ToLocation location;
-
-  TODORemove(this.location);
-
-  factory TODORemove.parse(ToPage parent, ToLocation location) {
-    return TODORemove(location);
-  }
-
-  @override
-  Uri get uri => location.uri;
-
-  @override
-  Widget build(BuildContext context) {
-    return const Text("...");
-  }
-
-}
-
-ToPage _emptyScreen(ToLocation location) {
-  return TODORemove(location);
 }
 
 /// To == go_router.GoRoute
 /// 官方的go_router内部略显复杂，且没有我们想要的layout等功能，所以自定一个简化版的to_router
 class To {
-  ToHandler handler;
   final String part;
-  late final String _paramName;
-  late final ToType _paramType;
+  late final String _name;
+  late final ToType _type;
 
   To? _parent;
 
   final LayoutRetry layoutRetry;
-  late final List<To> children;
-  final PageBuilder pageSpecBuilder;
+  final List<To> children;
+  final PageBuilder? page;
   final LayoutBuilder? layout;
 
-  To(this.part,
-      {this.handler = const _EmptyHandler(),
-      PageBuilder? page,
-      this.layout,
-      this.layoutRetry = LayoutRetry.none,
-      List<To>? children})
-      : assert(part == "/" || !part.contains("/"), "part:'$part' assert fail"),
-        children = children ?? List.empty(growable: true),
-        pageSpecBuilder = page ?? _emptyScreen {
+  To(
+    this.part, {
+    this.page,
+    this.layout,
+    this.layoutRetry = LayoutRetry.none,
+    this.children = const [],
+  }) : assert(part == "/" || !part.contains("/"), "part:'$part' should be '/' or legal directory name") {
     var parsed = _parse(part);
-    _paramName = parsed.$1;
-    _paramType = parsed.$2;
+    _name = parsed.$1;
+    _type = parsed.$2;
 
-    for (var route in this.children) {
+    for (var route in children) {
       route._parent = this;
     }
-  }
-
-  static To fromHandlers(List<ToHandler> handlers) {
-    To result = To("/");
-    for (ToHandler h in handlers) {
-      if (h.uriTemplate == "/") {
-        result.handler = h;
-        continue;
-      }
-
-      var parts = h.uriTemplate.split("/").map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
-      var to = result._ensurePath(parts);
-      to.handler = h;
-    }
-    return result;
-  }
-
-  To _ensurePath(List<String> parts) {
-    if (parts.isEmpty) {
-      return this;
-    }
-    String name = parts[0];
-    assert(name != "" && name != "/", "path:$parts, path[0]:'$name' must not be '' and '/' ");
-    var findNext = children.where((e) => e.part == name);
-    var next = findNext.firstOrNull;
-    if (next == null) {
-      next = To(name, page: pageSpecBuilder);
-      next._parent = this;
-      children.add(next);
-    }
-
-    return next._ensurePath(parts.sublist(1));
   }
 
   bool get isRoot => _parent == null;
@@ -256,17 +159,14 @@ class To {
 
   List<To> get ancestors => isRoot ? [] : [_parent!, ..._parent!.ancestors];
 
-  List<To> get listToRoot => [this, ...ancestors];
-
   To child(String part) {
     return children.singleWhere((e) => e.part == part);
   }
 
   To? _matchChild({required String segment}) {
-    To? matched =
-        children.where((e) => e._paramType == ToType.static).where((e) => segment == e._paramName).firstOrNull;
+    To? matched = children.where((e) => e._type == ToType.static).where((e) => segment == e._name).firstOrNull;
     if (matched != null) return matched;
-    matched = children.where((e) => e._paramType == ToType.dynamic || e._paramType == ToType.dynamicAll).firstOrNull;
+    matched = children.where((e) => e._type == ToType.dynamic || e._type == ToType.dynamicAll).firstOrNull;
     if (matched != null) return matched;
     return null;
   }
@@ -282,7 +182,7 @@ class To {
 
     // 忽略后缀'/'
     // next=="" 代表最后以 '/' 结尾,当前 segments==[""]
-    if (_paramType == ToType.static && next == "") {
+    if (_type == ToType.static && next == "") {
       return ToLocation._(uri: uri, to: this, params: params);
     }
 
@@ -291,19 +191,19 @@ class To {
       throw NotFoundError(invalidValue: uri);
     }
 
-    if (matchedNext._paramType == ToType.dynamicAll) {
+    if (matchedNext._type == ToType.dynamicAll) {
       // /tree/[...file]
       //     /tree/x/y   --> {"file":"x/y"}
       //     /tree/x/y/  --> {"file":"x/y/"}
       // dynamicAll param must be last
-      params[matchedNext._paramName] = segments.join("/");
+      params[matchedNext._name] = segments.join("/");
       return ToLocation._(uri: uri, to: matchedNext, params: params);
     } else {
       if (next == "") {
         return ToLocation._(uri: uri, to: this, params: params);
       }
-      if (matchedNext._paramType == ToType.dynamic) {
-        params[matchedNext._paramName] = next;
+      if (matchedNext._type == ToType.dynamic) {
+        params[matchedNext._name] = next;
       }
     }
 
@@ -411,21 +311,24 @@ class _RouterScope extends StatelessWidget {
   }
 }
 
-class ToRouteInfo {
+class _RouteInfo {
   static int pageKeyGen = 0;
 
   final ToLocation location;
 
-  ToRouteInfo({required this.location});
+  _RouteInfo({required this.location});
 
   get uri => location.uri;
 
   Page<dynamic> build(BuildContext context) {
-    var content = location.to.handler.build(context, location);
-    for (var x in location.to.listToRoot) {
-      Widget? tryLayout = x.handler.layout(context, location, content);
-      if (tryLayout != null) {
-        content = tryLayout;
+    var to = location.to;
+    if (to.page == null) {
+      throw NotFoundError(invalidValue: location.uri);
+    }
+    Widget content = to.page!(location);
+    for (var x in [to, ...to.ancestors]) {
+      if (x.layout != null) {
+        content = x.layout!(context, location, content);
       }
     }
     return MaterialPage(key: ValueKey(pageKeyGen++), child: content);
@@ -437,27 +340,27 @@ class ToRouteInfo {
   }
 }
 
-class _RouteInformationParser extends RouteInformationParser<ToRouteInfo> {
+class _RouteInformationParser extends RouteInformationParser<_RouteInfo> {
   final ToRouter router;
 
   _RouteInformationParser({required this.router});
 
   @override
-  Future<ToRouteInfo> parseRouteInformation(RouteInformation routeInformation) {
+  Future<_RouteInfo> parseRouteInformation(RouteInformation routeInformation) {
     ToLocation location = router.matchUri(routeInformation.uri);
-    return SynchronousFuture(ToRouteInfo(location: location));
+    return SynchronousFuture(_RouteInfo(location: location));
   }
 
   @override
-  RouteInformation? restoreRouteInformation(ToRouteInfo configuration) {
+  RouteInformation? restoreRouteInformation(_RouteInfo configuration) {
     return RouteInformation(uri: configuration.uri);
   }
 }
 
-class _RouterDelegate extends RouterDelegate<ToRouteInfo>
-    with ChangeNotifier, PopNavigatorRouterDelegateMixin<ToRouteInfo> {
+class _RouterDelegate extends RouterDelegate<_RouteInfo>
+    with ChangeNotifier, PopNavigatorRouterDelegateMixin<_RouteInfo> {
   final ToRouter router;
-  final List<ToRouteInfo> stack;
+  final List<_RouteInfo> stack;
 
   @override
   final GlobalKey<NavigatorState> navigatorKey;
@@ -468,18 +371,18 @@ class _RouterDelegate extends RouterDelegate<ToRouteInfo>
   }) : stack = [];
 
   @override
-  Future<void> setNewRoutePath(ToRouteInfo configuration) {
+  Future<void> setNewRoutePath(_RouteInfo configuration) {
     stack.add(configuration);
     return SynchronousFuture(null);
   }
 
   @override
-  Future<void> setRestoredRoutePath(ToRouteInfo configuration) {
+  Future<void> setRestoredRoutePath(_RouteInfo configuration) {
     return setNewRoutePath(configuration);
   }
 
   @override
-  ToRouteInfo? get currentConfiguration {
+  _RouteInfo? get currentConfiguration {
     return stack.isEmpty ? null : stack.last;
   }
 

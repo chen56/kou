@@ -3,8 +3,8 @@ import 'package:kou_macos/src/common/to_router.dart';
 
 import '[machine]/page.dart';
 
-class MachinesPage extends ToPage {
-  MachinesPage();
+class MachinesPage extends StatelessWidget with ToPageMixin {
+  MachinesPage({super.key});
 
   MachinePage machine({required String machine}) => MachinePage(machine: machine);
 
@@ -18,17 +18,5 @@ class MachinesPage extends ToPage {
   @override
   Widget build(BuildContext context) {
     return const Text("/machine page");
-  }
-}
-
-final class MachinesHandler with ToHandler {
-  MachinesHandler() : super();
-
-  @override
-  String get uriTemplate => "/machines";
-
-  @override
-  Widget build(BuildContext context, ToLocation location) {
-    return Text("$uriTemplate : ${location.uri}");
   }
 }

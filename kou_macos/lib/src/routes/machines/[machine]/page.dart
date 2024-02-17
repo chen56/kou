@@ -1,10 +1,10 @@
 import 'package:flutter/widgets.dart';
 import 'package:kou_macos/src/common/to_router.dart';
 
-class MachinePage extends ToPage {
+class MachinePage extends StatelessWidget with ToPageMixin {
   final String machine;
 
-  MachinePage({required this.machine});
+  MachinePage({super.key, required this.machine});
 
   factory MachinePage.parse(ToLocation to) {
     String? machine = to.params["machine"];
@@ -19,22 +19,5 @@ class MachinePage extends ToPage {
   @override
   Widget build(BuildContext context) {
     return Text("/machine page : [$machine]");
-  }
-}
-
-final class MachineHandler with ToHandler {
-  MachineHandler() : super();
-
-  @override
-  String get uriTemplate => "/machines/[machine]";
-
-  @override
-  Widget build(BuildContext context, ToLocation location) {
-    return Text("$uriTemplate : ${location.uri}");
-  }
-
-  Uri create({required String machine}) {
-    //todo setup uri
-    return Uri.parse("/machines/$machine");
   }
 }
