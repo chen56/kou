@@ -8,7 +8,7 @@ class MachinesPage extends StatelessWidget with PageMixin {
 
   MachinePage machine({required String machine}) => MachinePage(machine: machine);
 
-  factory MachinesPage.content(ToLocation to) {
+  factory MachinesPage.content(Location to) {
     return MachinesPage();
   }
 

@@ -36,9 +36,9 @@ ref: https://github.com/react-navigation/react-navigation
     我
  */
 
-typedef ContentBuilder = Widget Function(ToLocation loc);
-typedef LayoutBuilder = Widget Function(BuildContext context, ToLocation loc, Widget child);
-typedef PageBuilder = Page<dynamic> Function(BuildContext context, ToLocation loc, Widget child);
+typedef ContentBuilder = Widget Function(Location loc);
+typedef LayoutBuilder = Widget Function(BuildContext context, Location loc, Widget child);
+typedef PageBuilder = Page<dynamic> Function(BuildContext context, Location loc, Widget child);
 
 class NotFoundError extends ArgumentError {
   NotFoundError({required Uri invalidValue, String name = "uri", String message = "Not Found"})
@@ -61,15 +61,15 @@ class ToRouter {
     return result!.router;
   }
 
-  ToLocation matchUri(Uri uri) {
+  Location matchUri(Uri uri) {
     assert(uri.path.startsWith("/"));
-    if (uri.path == "/") return ToLocation._(uri: uri, to: root);
+    if (uri.path == "/") return Location._(uri: uri, to: root);
 
     Map<String, String> params = {};
     return root._match(uri: uri, segments: uri.pathSegments, params: params);
   }
 
-  ToLocation match(String uri) {
+  Location match(String uri) {
     return matchUri(Uri.parse(uri));
   }
 
@@ -170,7 +170,7 @@ class To {
     return null;
   }
 
-  ToLocation _match({
+  Location _match({
     required Uri uri,
     required List<String> segments,
     required Map<String, String> params,
@@ -182,7 +182,7 @@ class To {
     // 忽略后缀'/'
     // next=="" 代表最后以 '/' 结尾,当前 segments==[""]
     if (_type == ToType.static && next == "") {
-      return ToLocation._(uri: uri, to: this, params: params);
+      return Location._(uri: uri, to: this, params: params);
     }
 
     To? matchedNext = _matchChild(segment: next);
@@ -196,10 +196,10 @@ class To {
       //     /tree/x/y/  --> {"file":"x/y/"}
       // dynamicAll param must be last
       params[matchedNext._name] = segments.join("/");
-      return ToLocation._(uri: uri, to: matchedNext, params: params);
+      return Location._(uri: uri, to: matchedNext, params: params);
     } else {
       if (next == "") {
-        return ToLocation._(uri: uri, to: this, params: params);
+        return Location._(uri: uri, to: this, params: params);
       }
       if (matchedNext._type == ToType.dynamic) {
         params[matchedNext._name] = next;
@@ -207,7 +207,7 @@ class To {
     }
 
     if (rest.isEmpty) {
-      return ToLocation._(uri: uri, to: matchedNext, params: params);
+      return Location._(uri: uri, to: matchedNext, params: params);
     }
 
     return matchedNext._match(uri: uri, segments: rest, params: params);
@@ -281,12 +281,12 @@ ${"  " * level}</Route>''';
   }
 }
 
-class ToLocation {
+class Location {
   final To to;
   final Uri uri;
   final Map<String, String> params;
 
-  ToLocation._({
+  Location._({
     required this.uri,
     required this.to,
     this.params = const {},
@@ -335,27 +335,26 @@ class _RouterScope extends StatelessWidget {
   }
 }
 
-class _RouteInformationParser extends RouteInformationParser<ToLocation> {
+class _RouteInformationParser extends RouteInformationParser<Location> {
   final ToRouter router;
 
   _RouteInformationParser({required this.router});
 
   @override
-  Future<ToLocation> parseRouteInformation(RouteInformation routeInformation) {
-    ToLocation location = router.matchUri(routeInformation.uri);
+  Future<Location> parseRouteInformation(RouteInformation routeInformation) {
+    Location location = router.matchUri(routeInformation.uri);
     return SynchronousFuture(location);
   }
 
   @override
-  RouteInformation? restoreRouteInformation(ToLocation configuration) {
+  RouteInformation? restoreRouteInformation(Location configuration) {
     return RouteInformation(uri: configuration.uri);
   }
 }
 
-class _RouterDelegate extends RouterDelegate<ToLocation>
-    with ChangeNotifier, PopNavigatorRouterDelegateMixin<ToLocation> {
+class _RouterDelegate extends RouterDelegate<Location> with ChangeNotifier, PopNavigatorRouterDelegateMixin<Location> {
   final ToRouter router;
-  final List<ToLocation> stack;
+  final List<Location> stack;
 
   @override
   final GlobalKey<NavigatorState> navigatorKey;
@@ -366,18 +365,18 @@ class _RouterDelegate extends RouterDelegate<ToLocation>
   }) : stack = [];
 
   @override
-  Future<void> setNewRoutePath(ToLocation configuration) {
+  Future<void> setNewRoutePath(Location configuration) {
     stack.add(configuration);
     return SynchronousFuture(null);
   }
 
   @override
-  Future<void> setRestoredRoutePath(ToLocation configuration) {
+  Future<void> setRestoredRoutePath(Location configuration) {
     return setNewRoutePath(configuration);
   }
 
   @override
-  ToLocation? get currentConfiguration {
+  Location? get currentConfiguration {
     return stack.isEmpty ? null : stack.last;
   }
 

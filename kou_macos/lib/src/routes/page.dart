@@ -6,18 +6,18 @@ import 'package:kou_macos/src/routes/machines/[machine]/page.dart';
 class RootPage extends StatelessWidget with PageMixin {
   RootPage({super.key});
 
-  factory RootPage.content(ToLocation to) {
+  factory RootPage.content(Location to) {
     return RootPage();
   }
 
   @override
   Uri get uri => Uri.parse("/");
 
-  static Widget layout(BuildContext context, ToLocation location, Widget child) {
+  static Widget layout(BuildContext context, Location location, Widget child) {
     return _RootLayout(content: child);
   }
 
-  static Page<dynamic> page(BuildContext context, ToLocation loc, Widget child) =>
+  static Page<dynamic> page(BuildContext context, Location loc, Widget child) =>
       MaterialPage(key: ValueKey(loc.uri.toString()), child: child);
 
   @override

@@ -6,7 +6,7 @@ class MachinePage extends StatelessWidget with PageMixin {
 
   MachinePage({super.key, required this.machine});
 
-  factory MachinePage.content(ToLocation to) {
+  factory MachinePage.content(Location to) {
     String? machine = to.params["machine"];
     assert(machine != null, "machine arg should not be null");
 

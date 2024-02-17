@@ -3,7 +3,7 @@ import 'package:kou_macos/src/common/to_router.dart';
 import 'package:kou_macos/src/routes/machines/[machine]/page.dart';
 import 'package:kou_macos/src/routes/page.dart';
 
-Widget layout(BuildContext context, ToLocation location, Widget content) {
+Widget layout(BuildContext context, Location location, Widget content) {
   return _RootLayout(content: content);
 }
 
