@@ -13,7 +13,7 @@ class RootPage extends StatelessWidget with PageMixin {
   @override
   Uri get uri => Uri.parse("/");
 
-  static Widget layout(BuildContext context, Location location, Widget child) {
+  static Widget layout(BuildContext context, Location loc, Widget child) {
     return _RootLayout(content: child);
   }
 
