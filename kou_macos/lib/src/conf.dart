@@ -5,6 +5,23 @@ import 'package:file/file.dart';
 
 JsonEncoder _encoder = const JsonEncoder.withIndent('  ');
 
+const confSample = '''
+{
+  "version" : "1.0",
+  "tencentcloudstack/tencentcloud": [
+    {
+      "secret_id"  : "my-secret-id",
+      "secret_key" : "my-secret-key",
+      "vm" :[
+        {
+          "instance_id":"xxx",
+        },
+      ]
+    }
+  ]
+}
+''';
+
 /// kou.conf.json
 class KouConf {
   final Map<String, MachineConf> machines = {};
@@ -31,6 +48,7 @@ class KouConf {
   }
 
   Future<KouConf> save(File file) async {
+    await file.parent.create(recursive: true);
     await file.writeAsString(_encoder.convert(encode()));
     return this;
   }

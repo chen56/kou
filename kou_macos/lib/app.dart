@@ -29,6 +29,8 @@ class KouSystem {
   KouSystem._({required this.dataDir, required this.conf});
 
   static Future<KouSystem> load({required Directory dataDir}) async {
+    await dataDir.create(recursive: true);
+
     var confFile = dataDir.childFile("conf.json");
     return KouSystem._(dataDir: dataDir, conf: await KouConf.load(confFile));
   }
@@ -51,7 +53,6 @@ class App extends StatefulWidget {
       final double windowWidth = WindowClass.xl.widthFrom;
       const double windowHeight = 600;
 
-      WidgetsFlutterBinding.ensureInitialized();
       window_size.setWindowTitle(title);
       window_size.setWindowMinSize(Size(minWindowWidth, windowHeight));
       window_size.getCurrentScreen().then((screen) {
