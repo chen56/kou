@@ -1,6 +1,7 @@
 import 'package:file/local.dart';
 import 'package:flutter/material.dart';
 import 'package:kou_macos/app.dart';
+import 'package:kou_macos/src/core/core.dart';
 import 'package:path_provider/path_provider.dart';
 
 Future<void> main() async {

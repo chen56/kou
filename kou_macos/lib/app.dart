@@ -1,17 +1,16 @@
 import 'dart:io';
 
-import 'package:file/file.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:kou_macos/src/common/to_router.dart';
 import 'package:kou_macos/src/common/ui.dart';
-import 'package:kou_macos/src/conf.dart';
+import 'package:kou_macos/src/core/core.dart';
 import 'package:kou_macos/src/routes/machines/[machine]/page.dart';
 import 'package:kou_macos/src/routes/machines/page.dart';
 import 'package:kou_macos/src/routes/page.dart';
 import 'package:window_size/window_size.dart' as window_size;
 
-ToRouter createRouter() {
+ToRouter _createRouter() {
   To root = To("/", content: RootPage.content, layout: RootPage.layout, page: RootPage.page, children: [
     To("machines", content: MachinesPage.content, children: [
       To("[machine]", content: MachinePage.content),
@@ -20,21 +19,7 @@ ToRouter createRouter() {
   return ToRouter(root: root);
 }
 
-ToRouter router = createRouter();
-
-class KouSystem {
-  final Directory dataDir;
-  final KouConf conf;
-
-  KouSystem._({required this.dataDir, required this.conf});
-
-  static Future<KouSystem> load({required Directory dataDir}) async {
-    await dataDir.create(recursive: true);
-
-    var confFile = dataDir.childFile("conf.json");
-    return KouSystem._(dataDir: dataDir, conf: await KouConf.load(confFile));
-  }
-}
+ToRouter router = _createRouter();
 
 class App extends StatefulWidget {
   static final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>(debugLabel: "mainNavigator");
