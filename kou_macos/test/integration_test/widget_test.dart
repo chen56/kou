@@ -8,6 +8,7 @@
 import 'package:file/memory.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kou_macos/app.dart';
+import 'package:kou_macos/src/core/core.dart';
 
 void main() {
   var fs = MemoryFileSystem();
