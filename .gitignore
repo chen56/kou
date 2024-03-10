@@ -4,7 +4,8 @@
 # macbook
 .DS_Store
 
-
+dist
+tmp
 
 ########################
 ### terraform
