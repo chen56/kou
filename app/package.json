@@ -1,0 +1,10 @@
+{
+  "name": "@kou/app",
+  "engines": {
+    "node": ">=20",
+    "pnpm": ">=8"
+  },
+  "workspaces": [
+    "./packages/*"
+  ]
+}
