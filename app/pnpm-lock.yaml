@@ -8,7 +8,7 @@ importers:
 
   .: { }
 
-  packages/kou-render-qwik:
+  packages/kou-qwik:
     devDependencies:
       '@builder.io/qwik':
         specifier: ^1.5.1

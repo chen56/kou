@@ -1,4 +1,4 @@
-import {component$, useSignal, $} from "@builder.io/qwik";
+import {$, component$, useSignal} from "@builder.io/qwik";
 import styles from "./counter.module.css";
 import Gauge from "../gauge";
 
