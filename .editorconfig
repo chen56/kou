@@ -19,3 +19,7 @@ max_line_length = 200
 
 [*_test.dart]
 max_line_length = 130
+
+[*.tsx]
+max_line_length = 200
+
