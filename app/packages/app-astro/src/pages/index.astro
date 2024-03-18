@@ -4,8 +4,11 @@ import Layout from '../layouts/Layout.astro';
 
 <Layout title="Welcome to Astro.">
     <main>
-        <h1>Welcome to <span class="text-gradient">Astro</span></h1>
-        <p class="text-red-400 bg-red-100">Astro22222</p>
-        <button class="btn btn-primary">Button</button>
+        <div class="bg-base-300">header</div>
+        <div class="flex">
+            <span class="w-48   bg-base-200 h-dvh">nav left</span>
+            <span class="w-full bg-base-100">content</span>
+            <span class="w-48   bg-base-200">nav right</span>
+        </div>
     </main>
 </Layout>
