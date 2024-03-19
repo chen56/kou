@@ -30,15 +30,28 @@ const {title} = Astro.props;
 
     <div class="flex">
         <!--h-dvh 使左边栏占满viewport所有有效高度-->
-        <div class="flex-none min-w-48   bg-base-200 h-dvh  ">
-            <ul class="menu bg-base-200 w-56 rounded-box">
+        <div class="min-w-48 bg-base-200 h-dvh">
+            <ul class="menu">
                 <li><a href="/">Home</a></li>
                 <li><a href="/react">react</a></li>
                 <li><a href="/mdx">mdx</a></li>
             </ul>
-            s
         </div>
-        <div class="flex-auto">
+        <!--
+        设置内容区域单独滚动，必须要让内容区域实际高度小于可显示高度：
+        比如:
+        <div style="height:500px;overflow-y: scroll;" class="bg-red-100">
+            <div style="height:1000px;" class="bg-blue-100">很长的内容。。。</div>
+        </div>
+
+        所以设置下列class：
+        h-dvh 高度viewport最大（y轴必须）
+        overflow-y-scroll y轴滚动（y轴必须）
+        scroll-smooth 平滑滚动（可选）
+
+        style="overflow-y: unset;height: 600px"
+        -->
+        <div class="w-dvw h-dvh  overflow-y-scroll scroll-smooth" style="overflow-y: scroll ;">
             <slot/>
         </div>
         <!--<span class="flex-none min-w-48    bg-base-200  ">nav right</span>-->

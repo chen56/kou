@@ -1,4 +1,5 @@
 import {useState} from 'react'
+import {navigate} from "astro:transitions/client";
 
 function App() {
     const [count, setCount] = useState(0)
@@ -31,3 +32,13 @@ export function App3() {
     )
 }
 
+
+export function Form() {
+    return (
+        <select onChange={(e) => navigate(e.target.value)}>
+            <option value="/">/</option>
+            <option value="/mdx">mdx</option>
+            <option value="/react">react</option>
+        </select>
+    );
+}
