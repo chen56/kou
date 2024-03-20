@@ -11,10 +11,14 @@ import react from "@astrojs/react";
 export default defineConfig({
     integrations: [tailwind(), react(), mdx()],
     vite: {
+        ssr: {
+            noExternal: ["primereact", "primeicons"]
+        },
         plugins: [
             Icons({
                 compiler: 'astro',
             }),
+
         ],
     },
 });
