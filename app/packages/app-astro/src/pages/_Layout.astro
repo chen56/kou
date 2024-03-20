@@ -4,6 +4,8 @@ interface Props {
 }
 
 const {title} = Astro.props;
+
+import MdiGithub from '~icons/mdi/github';
 ---
 
 <!doctype html>
@@ -24,7 +26,10 @@ const {title} = Astro.props;
             <a class="link link-hover text-xl">Kou</a>
         </div>
         <div class="navbar-end">
-            <a class="link link-hover text-xl">github</a>
+            <a class="link link-hover text-xl" target="_blank" href="https://github.com/chen56/kou">
+                <MdiGithub class="hover:text-red-400" width="32" height="32"/>
+            </a>
+
         </div>
     </div>
 
@@ -32,9 +37,11 @@ const {title} = Astro.props;
         <!--h-dvh 使左边栏占满viewport所有有效高度-->
         <div class="min-w-48 bg-base-200 h-dvh">
             <ul class="menu">
+                <MdiGithub style="color: red" width="48" height="48"/>
+                <MdiGithub class="text-red-400" width="32" height="32"/>
+
                 <li><a href="/">Home</a></li>
-                <li><a href="/react">react</a></li>
-                <li><a href="/mdx">mdx</a></li>
+                <li><a href="/providers">提供器Provider</a></li>
             </ul>
         </div>
         <!--
