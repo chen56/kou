@@ -13,7 +13,7 @@ export default function BasicDemo() {
 
     return (
         <div className="card flex justify-content-center">
-            <Dropdown value={selectedCity} onChange={(e) => setSelectedCity(e.value)} options={cities} optionLabel="name" placeholder="Select a City" className="w-full md:w-14"/>
+            <Dropdown value={selectedCity} onChange={(e) => setSelectedCity(e.value)} options={cities} optionLabel="name" placeholder="Select a City" className="w-full "/>
         </div>
     )
 }
