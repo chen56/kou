@@ -1,10 +1,16 @@
 import type {Metadata} from "next";
 import {Inter} from "next/font/google";
-import '@radix-ui/themes/styles.css';
-import {Theme} from '@radix-ui/themes';
+
+import React from "react";
+
+
+// mui: https://mui.com/material-ui/getting-started/installation/
+import '@fontsource/roboto/300.css';
+import '@fontsource/roboto/400.css';
+import '@fontsource/roboto/500.css';
+import '@fontsource/roboto/700.css';
 
 import "./globals.css";
-import React from "react";
 
 const inter = Inter({subsets: ["latin"]});
 
@@ -21,9 +27,7 @@ export default function RootLayout({
     return (
         <html lang="en">
         <body className={inter.className}>
-        <Theme>
-            {children}
-        </Theme>
+        {children}
         </body>
         </html>
     );
