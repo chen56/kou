@@ -20,6 +20,6 @@ const config: Config = {
         // https://tailwind.nodejs.cn/docs/preflight
         preflight: true,
     },
-    plugins: [],
+    plugins: [require("daisyui")],
 };
 export default config;
