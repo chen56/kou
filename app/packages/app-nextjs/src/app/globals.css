@@ -29,10 +29,11 @@ body {
 
 /*
 daisyui的定制
-- 用tailwind的@apply指令
+https://tailwind.nodejs.cn/docs/adding-custom-styles
+- 用tailwind的@apply指令或theme()函数引用tailwind或daisyui已定义的值
 */
 @layer components {
-    /*btn增加波纹效果*/
+    /*daisyui btn增加波纹效果*/
     .btn {
         @apply rounded-2xl;
         overflow: hidden;
