@@ -26,3 +26,42 @@ body {
         text-wrap: inherit;
     }
 }
+
+/*
+daisyui的定制
+- 用tailwind的@apply指令
+*/
+@layer components {
+    /*btn增加波纹效果*/
+    .btn {
+        @apply rounded-2xl;
+        overflow: hidden;
+        position: relative;
+        transition: background-color .3s linear, border .3s linear;
+
+        &:after {
+            content: "";
+            display: block;
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+            background-image: radial-gradient(circle, #000 10%, rgba(0, 0, 0, 0) 10.01%);
+            background-repeat: no-repeat;
+            background-position: 50%;
+            transform: scale(10);
+            opacity: 0;
+            transition: transform .5s, opacity 1s;
+        }
+
+        &:active:after {
+            transform: scale(0);
+            transition: 0s;
+            opacity: 0.3;
+        }
+    }
+}
+
+
