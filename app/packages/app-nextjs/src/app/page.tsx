@@ -1,5 +1,4 @@
 import * as React from 'react';
-import Button from '@mui/material/Button';
 import Link from 'next/link';
 
 export default function ButtonUsage() {
@@ -8,8 +7,6 @@ export default function ButtonUsage() {
         <br/>
         <Link href={"/"}>/</Link>
         <br/>
-
-        <Button variant="contained">Hello world </Button>
     </div>
         ;
 }
