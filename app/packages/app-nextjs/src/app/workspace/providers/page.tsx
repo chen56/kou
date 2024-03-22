@@ -1,8 +1,13 @@
+'use client'
+
 import * as React from 'react';
 import Link from 'next/link';
 
 export default function ButtonUsage() {
     return <div className="">
+        {[...Array(100).keys()].map(
+            (key) => <button key={key} className="btn btn-primary">{key}</button>
+        )}
         <Link href={"/workspace"}>/workspace</Link>
         <br/>
         <Link href={"/"}>/</Link>
