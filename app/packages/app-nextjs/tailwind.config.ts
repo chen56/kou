@@ -16,8 +16,9 @@ const config: Config = {
         },
     },
     corePlugins: {
-        // Remove the Tailwind CSS preflight styles so it can use Material UI's preflight instead (CssBaseline).
-        preflight: false,
+        // Remove the Tailwind CSS preflight styles if get some problem.
+        // https://tailwind.nodejs.cn/docs/preflight
+        preflight: true,
     },
     plugins: [],
 };
