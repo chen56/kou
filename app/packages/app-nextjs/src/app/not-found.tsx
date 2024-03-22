@@ -3,10 +3,6 @@ import {headers} from 'next/headers'
 
 export default async function NotFound() {
     const headersList = headers()
-    const x = Array.from(headersList)
-    x.map(([key, value]) => `${key}=${value}`).forEach((x) => {
-        console.log(x)
-    });
     const referer = headersList.get('referer')
     return (
         <div>
