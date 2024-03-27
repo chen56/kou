@@ -5,11 +5,13 @@ set -o functrace # -T If set, any trap on DEBUG and RETURN are inherited by shel
 set -o pipefail  # default pipeline status==last command status, If set, status=any command fail
 #set -o nounset # -u: don't use it ,it is crazy, 1.bash version is diff Behavior 2.we need like this: ${arr[@]+"${arr[@]}"}
 
+_bake_version=v0.3.20240327
+
 # v0.2.20230525 - It can run normally on macos
 # todo
-#   1. sub cmd help not work
-#   2. cmd help use @cmd define?
-#   3. split to common bash script ,  can use git tree use it
+#   1. 尴尬：当前 无法判断错误命令：./bake no_this_cmd ,因为不知道这是否是此命令的参数，
+#      干脆设一个简单的规则：只有叶子命令才能执行，这样非叶子命令就不需要有参数，好判断了
+#   2. 尴尬：当前 无法判断错误options：./bake --no_this_cmd ,同上
 #
 # chinese-----------------------------------------------------------------------
 # bake == (bash)ake == 去Make的bash tool
@@ -488,7 +490,7 @@ Available Commands:"
 }
 
 
-# 为cmd配置参数
+# 为cmd配置参数(public api)
 # Examples:
 #   bake.opt --cmd "build" --name "is_zip" --type bool --required --abbr z --default true --optHelp "is_zip, build项目时是否压缩"
 # 每个参数可以配置如下信息：
@@ -651,7 +653,7 @@ bake.cmd() {
 }
 
 
-# list bake internal var , used to debug bake self
+# list bake var info(public api),use for debug
 # Usage: info
 bake.info() {
 
@@ -692,7 +694,7 @@ EOF
 
 }
 
-
+# 入口 (public api)
 bake.go() {
   # init register all cmd
 
@@ -741,6 +743,10 @@ if ((${#BASH_SOURCE[@]} > 1)); then
   bake._debug "【${BAKE_FILE}】 call by other script【$(printf " ▶︎ %s" "${BASH_SOURCE[@]}")】, lib mode on, not load below app script" >&2
 fi
 
+# bake内部版本(public api)
+bake.version(){
+  echo "$_bake_version"
+}
 
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 # bake common script end line.
