@@ -1,2 +1,2 @@
 # kou
-kou app install tools
+younpc app install tools

@@ -1,17 +1,17 @@
 resource "tencentcloud_vpc" "main" {
-  name         = "kou.vpc.main"
+  name         = "younpc.vpc.main"
   cidr_block   = "10.10.0.0/16"
   is_multicast = true
 
   tags = {
-    "kou.workspace" = "workspace_ai"
+    "younpc.workspace" = "workspace_ai"
   }
 }
 # vpc  have a default tencentcloud_route_table , so , dont create it
 
 resource "tencentcloud_subnet" "zone_7" {
   vpc_id            = tencentcloud_vpc.main.id
-  name              = "kou.subnet.zone_7"
+  name              = "younpc.subnet.zone_7"
   cidr_block        = "10.10.70.0/24"
   availability_zone = "ap-guangzhou-7"
 }

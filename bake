@@ -26,7 +26,7 @@ source "$SCRIPT_DIR/bake.bash"
 declare -A projects
 
 projects=(
-    ["kouc"]="$SCRIPT_DIR/kou_macos"
+    ["app"]="$SCRIPT_DIR/app"
     ["kous"]="$SCRIPT_DIR/kous"
 )
 
@@ -51,7 +51,7 @@ _exec() {
 
 bake.cmd --cmd _root \
              --usage "./$SCRIPT_FILE [cmd] [opts] [args...]" \
-             --summary "flutter-note build cli." \
+             --summary "younpc build cli." \
              --description "$( cat <<-EOF
 
  ___  _        _    _                    _  _       _
@@ -59,7 +59,7 @@ bake.cmd --cmd _root \
 | _| | || || ||  _||  _|/ -_)| '_|      | .  |/ _ \|  _|/ -_)
 |_|  |_| \_._| \__| \__|\___||_|        |_|\_|\___/ \__|\___|
 
-flutter-note build tools.
+younpc build tools.
 https://github.com/chen56/note
 
 Examples:
@@ -106,12 +106,12 @@ p.one(){
 }
 
 
-p.kouc(){         p.one kouc "$@" ; }
-p.kouc.clean(){   p.kouc flutter clean ; }
-p.kouc.get(){     p.kouc flutter pub get ; }
-p.kous(){         p.one kous "$@" ; }
-p.kous.clean(){   echo "nothing clean" ; }
-p.kous.get(){     p.kous go mod tidy    ; }
+p.app(){         p.one app "$@" ; }
+p.app.clean(){   p.app flutter clean ; }
+p.app.get(){     p.app flutter pub get ; }
+p.kous(){        p.one kous "$@" ; }
+p.kous.clean(){  echo "nothing clean" ; }
+p.kous.get(){    p.kous go mod tidy    ; }
 
 get(){
   _getBake

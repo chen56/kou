@@ -14,8 +14,11 @@ trim_trailing_whitespace=true
 [*.dart]
 indent_size = 2
 
-[*.widget.dart]
-max_line_length = 200
+[*.ui.dart]
+max_line_length = 500
+
+[page.dart]
+max_line_length = 500
 
 [*_test.dart]
 max_line_length = 130

@@ -631,7 +631,7 @@ bake.parse() {
 # 尤其是可以配置_root命令以定制根命令的帮助信息，比如:
 #   bake.cmd --cmd _root \
 #             --usage "./$SCRIPT_FILE [cmd] [opts] [args...]" \
-#             --summary "flutter-note cli." \
+#             --summary "younpc cli." \
 #             --description ".... your root cmd help "
 # 这样就可以用'./your_script -h' 查看根帮助了
 bake.opt --cmd "bake.cmd" --name "cmd"         --type string --optHelp "cmd, function name"
