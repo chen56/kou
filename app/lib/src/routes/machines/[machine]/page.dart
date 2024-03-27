@@ -6,7 +6,7 @@ class MachinePage extends StatelessWidget with PageMixin {
 
   MachinePage({super.key, required this.machine});
 
-  factory MachinePage.content(Location to) {
+  factory MachinePage.fromURI(Location to) {
     String? machine = to.params["machine"];
     assert(machine != null, "machine arg should not be null");
 
@@ -20,4 +20,7 @@ class MachinePage extends StatelessWidget with PageMixin {
   Widget build(BuildContext context) {
     return Text("/machine page : [$machine]");
   }
+
+  @override
+  String get uriTemplate => "/machines/[machine]";
 }

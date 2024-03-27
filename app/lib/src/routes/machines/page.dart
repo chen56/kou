@@ -8,9 +8,12 @@ class MachinesPage extends StatelessWidget with PageMixin {
 
   MachinePage machine({required String machine}) => MachinePage(machine: machine);
 
-  factory MachinesPage.content(Location to) {
+  factory MachinesPage.fromURI(Location to) {
     return MachinesPage();
   }
+
+  @override
+  String get uriTemplate => "/machines]";
 
   @override
   Uri get uri => Uri.parse("/machines");

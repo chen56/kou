@@ -36,7 +36,7 @@ ref: https://github.com/react-navigation/react-navigation
     我
  */
 
-typedef ContentBuilder = Widget Function(Location loc);
+typedef BodyBuilder = Widget Function(Location loc);
 typedef LayoutBuilder = Widget Function(BuildContext context, Location loc, Widget child);
 typedef PageBuilder = Page<dynamic> Function(BuildContext context, Location loc, Widget child);
 
@@ -69,24 +69,15 @@ class ToRouter {
     return root._match(uri: uri, segments: uri.pathSegments, params: params);
   }
 
-  Location match(String uri) {
-    return matchUri(Uri.parse(uri));
-  }
+  Location match(String uri) => matchUri(Uri.parse(uri));
 
   // [PlatformRouteInformationProvider.initialRouteInformation]
   RouterConfig<Object> toRouterConfig({required Uri initial, required GlobalKey<NavigatorState> navigatorKey}) {
     return RouterConfig<Object>(
-      routeInformationProvider: PlatformRouteInformationProvider(
-        initialRouteInformation: RouteInformation(
-          uri: initial,
-        ),
-      ),
-      routerDelegate: LoggableRouterDelegate(
-          logger: logger,
-          delegate: _RouterDelegate(
-            navigatorKey: navigatorKey,
-            router: this,
-          )),
+      routeInformationProvider:
+          PlatformRouteInformationProvider(initialRouteInformation: RouteInformation(uri: initial)),
+      routerDelegate:
+          LoggableRouterDelegate(logger: logger, delegate: _RouterDelegate(navigatorKey: navigatorKey, router: this)),
       routeInformationParser: _RouteInformationParser(router: this),
     );
   }
@@ -101,6 +92,7 @@ enum LayoutRetry {
   up;
 }
 
+/// 路由类型
 enum ToType {
   /// 正常路径片段: /settings
   static,
@@ -122,6 +114,7 @@ enum ToType {
 /// static type route instance
 mixin PageMixin on Widget {
   Uri get uri;
+  String get uriTemplate;
 }
 
 /// To == go_router.GoRoute
@@ -135,13 +128,13 @@ class To {
 
   final LayoutRetry layoutRetry;
   final List<To> children;
-  final ContentBuilder? content;
+  final BodyBuilder? body;
   final LayoutBuilder? layout;
   final PageBuilder? page;
 
   To(
     this.part, {
-    this.content,
+    this.body,
     this.layout,
     this.page,
     this.layoutRetry = LayoutRetry.none,
@@ -158,6 +151,10 @@ class To {
 
   bool get isRoot => _parent == null;
 
+  // 对于page目录树：
+  // - /              -> uriTemplate: /
+  //   - users        -> uriTemplate: /users
+  //     - [user]     -> uriTemplate: /users/[user]
   String get uriTemplate => isRoot ? "/" : path_.join(_parent!.uriTemplate, part);
 
   List<To> get ancestors => isRoot ? [] : [_parent!, ..._parent!.ancestors];
@@ -293,10 +290,10 @@ class Location {
   });
 
   Page<dynamic> _buildPage(BuildContext context) {
-    if (to.content == null) {
+    if (to.body == null) {
       throw NotFoundError(invalidValue: uri);
     }
-    Widget widget = to.content!(this);
+    Widget widget = to.body!(this);
     for (var x in [to, ...to.ancestors]) {
       if (x.layout != null) {
         widget = x.layout!(context, this, widget);
