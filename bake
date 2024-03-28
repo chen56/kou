@@ -38,13 +38,14 @@ declare -A pkgs=(
 # 应用的命令脚本
 ##########################################
 
-bake.cmd --cmd _root \
-         --usage "./$SCRIPT_FILE [cmd] [opts] [args...]" \
-         --summary "younpc build cli." \
-         --description "$( cat <<-EOF
+bake.cmd --cmd _root --desc "$( cat <<-EOF
 
-younpc build tools.
+younpc cli tools.
+
 https://github.com/chen56/younpc
+
+Usage:
+ ./$SCRIPT_FILE [cmd] [opts] [args...]
 
 Examples:
  ./${SCRIPT_FILE}                # same as  './${SCRIPT_FILE} -h'
@@ -96,9 +97,8 @@ temp(){
   run pwd
 }
 
-bake.cmd --cmd p --summary "<mono>  pkg set" --usage "Usage: ./$SCRIPT_FILE p <sub_cmd>"
-
-bake.cmd --cmd p.all --summary "<mono>  run cmd on all mono pkg" --usage "Usage: ./$SCRIPT_FILE all [any command]"
+bake.cmd --cmd p     --desc "<mono>  pkg set, Usage: ./$SCRIPT_FILE p <sub_cmd>"
+bake.cmd --cmd p.all --desc "<mono>  run cmd on all mono pkg, Usage: ./$SCRIPT_FILE all [any command]"
 all() { for name in "${!pkgs[@]}"; do cd "${pkgs[name]}" && run "$@"; done ; }
 
 app.run(){      cd "${pkgs[app]}" && run "$@" ; }
