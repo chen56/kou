@@ -2,12 +2,10 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:younpc/src/common/ui.dart';
 import 'package:younpc/src/core/core.dart';
 import 'package:younpc/src/routes.dart';
 import 'package:younpc/src/routes/machines/[machine]/page.dart';
 import 'package:window_size/window_size.dart' as window_size;
-
 
 class App extends StatefulWidget {
   static final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>(debugLabel: "mainNavigator");
@@ -20,19 +18,16 @@ class App extends StatefulWidget {
   @override
   State<App> createState() => _AppState();
 
+  // 这函数里的代码改了系统设置, hot reload不起作用，app会卡住，需重启
   static void initWindow({required String title}) {
     if (!kIsWeb && (Platform.isWindows || Platform.isLinux || Platform.isMacOS)) {
-      final double minWindowWidth = WindowClass.m.widthFrom;
-      final double windowWidth = WindowClass.xl.widthFrom;
-      const double windowHeight = 600;
-
       window_size.setWindowTitle(title);
-      window_size.setWindowMinSize(Size(minWindowWidth, windowHeight));
+      // window_size.setWindowMinSize(const Size(0, 0));
       window_size.getCurrentScreen().then((screen) {
         window_size.setWindowFrame(Rect.fromCenter(
           center: screen!.frame.center,
-          width: windowWidth,
-          height: windowHeight,
+          width: 600,
+          height: 600,
         ));
       });
     }

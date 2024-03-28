@@ -31,7 +31,7 @@ class RootLayout extends StatelessWidget {
       ]),
       floatingActionButton: FloatingActionButton(onPressed: () {}, tooltip: 'Increment', child: const Icon(Icons.add)),
       body: Row(children: [
-        if (kDebugMode) debug.measurement.constraints(),
+        if (kDebugMode) Expanded(child: debug.measurement.constraints()),
         Expanded(
           child: const Drawer$(width: 220)(
             ListView(scrollDirection: Axis.vertical, children: [

@@ -30,29 +30,6 @@ projects=(
     ["kous"]="$SCRIPT_DIR/kous"
 )
 
-
-####################################################################################
-# app script
-####################################################################################
-
-# run一条命令，先print上下文信息，再执行
-# Usage: run <some cmd>
-# Example:
-# ------------------------------------
-# $ ./bake run pwd
-# /Users/x/git/younpc/bake:733 -> bake.go() ▶︎【pwd】
-# /Users/x/git/younpc
-# ------------------------------------
-run() {
-  local caller_line=$(caller 0 | awk '{print $1}')
-  local project
-  project=$(basename "$PWD")
-  #  [[ "$PWD" == "$SCRIPT_DIR" ]] && project="_root"
-  echo "$SCRIPT_PATH:$caller_line -> ${FUNCNAME[1]} ▶︎【$@】"
-  "$@"
-  return $?
-}
-
 ##########################################
 # app cmd script
 # 应用的命令脚本
@@ -89,6 +66,24 @@ Examples:
 EOF
   )"
 
+
+# run一条命令，先print上下文信息，再执行
+# Usage: run <some cmd>
+# Example:
+# ------------------------------------
+# $ ./bake run pwd
+# /Users/x/git/younpc/bake:733 -> bake.go() ▶︎【pwd】
+# /Users/x/git/younpc
+# ------------------------------------
+run() {
+  local caller_line=$(caller 0 | awk '{print $1}')
+  local project
+  project=$(basename "$PWD")
+  #  [[ "$PWD" == "$SCRIPT_DIR" ]] && project="_root"
+  echo "$SCRIPT_PATH:$caller_line -> ${FUNCNAME[1]} ▶︎【$@】"
+  "$@"
+  return $?
+}
 
 #   flutter_note flutter create --platforms=macos .
 init() {
