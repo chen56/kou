@@ -15,17 +15,21 @@ SCRIPT_PATH="$(_real_path "${BASH_SOURCE[0]}")"
 SCRIPT_DIR="$(dirname "$SCRIPT_PATH")"
 SCRIPT_FILE="$(basename "$SCRIPT_PATH")"
 
-_getBake(){ curl -L -O https://github.com/chen56/note/raw/main/bake.bash ; }
-if ! [[ -f "$SCRIPT_DIR/bake.bash" ]]; then
-  _getBake
+_install_bake(){
+  echo "download bake.bash from: https://github.com/chen56/note/raw/main/bake.bash > $SCRIPT_DIR/bake.bash ";
+  mkdir "$SCRIPT_DIR/vendor"
+  curl -L -o  "$SCRIPT_DIR/vendor/bake.bash" https://github.com/chen56/note/raw/main/bake.bash ;
+}
+if ! [[ -f "$SCRIPT_DIR/vendor/bake.bash" ]]; then
+  _install_bake
 fi
 
 # include common script
-source "$SCRIPT_DIR/bake.bash"
+source "$SCRIPT_DIR/vendor/bake.bash"
 
-declare -A projects
+declare -A pkgs
 
-projects=(
+pkgs=(
     ["app"]="$SCRIPT_DIR/app"
     ["kous"]="$SCRIPT_DIR/kous"
     ["app_devtools"]="$SCRIPT_DIR/app/packages/app_devtools"
@@ -41,28 +45,23 @@ bake.cmd --cmd _root \
              --summary "younpc build cli." \
              --description "$( cat <<-EOF
 
- ___  _        _    _                    _  _       _
-| __|| | _  _ | |_ | |_  ___  _ _       | \| | ___ | |_  ___
-| _| | || || ||  _||  _|/ -_)| '_|      | .  |/ _ \|  _|/ -_)
-|_|  |_| \_._| \__| \__|\___||_|        |_|\_|\___/ \__|\___|
 
 younpc build tools.
-https://github.com/chen56/note
+https://github.com/chen56/younpc
 
 Examples:
- ./${SCRIPT_FILE}                          # same as  './${SCRIPT_FILE} -h'
- ./${SCRIPT_FILE} -h                       # show all commands help
- ./${SCRIPT_FILE} -h --debug               # show all commands help , include internal function
+ ./${SCRIPT_FILE}                # same as  './${SCRIPT_FILE} -h'
+ ./${SCRIPT_FILE} --help         # show all commands help
+ ./${SCRIPT_FILE} -h --debug     # show all commands help , include internal function
 
- ./${SCRIPT_FILE}  test                    # test all projects
- ./${SCRIPT_FILE}  build                   # defalut build == flutter build web --web-renderer html
- ./${SCRIPT_FILE}  preview                 # defalut preview == run server at web build
- ./${SCRIPT_FILE}  test                    # test all projects
+ ./${SCRIPT_FILE}  test          # test all pkgs
+ ./${SCRIPT_FILE}  build         # defalut build == flutter build web --web-renderer html
+ ./${SCRIPT_FILE}  preview       # defalut preview == run server at web build
+ ./${SCRIPT_FILE}  test          # test all pkgs
 
- ./${SCRIPT_FILE}  p -h                    # show all mono project commands help
- ./${SCRIPT_FILE}  p note pwd              # run "pwd" on note project dir
- ./${SCRIPT_FILE}  p all pwd               # run "pwd" on all mono projects
- ./${SCRIPT_FILE}  p all flutter pub get   # run "flutter pub get" on all mono projects
+ ./${SCRIPT_FILE}  all -h        # show all mono pkg commands help
+ ./${SCRIPT_FILE}  all ls        # run "ls" on all mono pkgs
+ ./${SCRIPT_FILE}  app ls        # run "ls" on app pkg dir
 
 EOF
   )"
@@ -78,18 +77,24 @@ EOF
 # ------------------------------------
 run() {
   local caller_line=$(caller 0 | awk '{print $1}')
-  local project
-  project=$(basename "$PWD")
-  #  [[ "$PWD" == "$SCRIPT_DIR" ]] && project="_root"
+  local pkg
+  pkg=$(basename "$PWD")
+  #  [[ "$PWD" == "$SCRIPT_DIR" ]] && pkg="_root"
   echo "$SCRIPT_PATH:$caller_line -> ${FUNCNAME[1]} ▶︎【$@】"
   "$@"
   return $?
 }
 
-runp(){
-  declare project=$1
-  shift
-  cd "${projects[$project]}" && run "$@" ;
+
+## if function not exist return 1;
+# Usage: _exist_func <function>
+# Example: _exist_func app.build
+#         => return 0
+_exist_func(){
+  local func="$1"
+  if ! ( declare -F "$func" | grep "$func" &>/dev/null  2>&1; ) then
+    return 1;
+  fi
 }
 
 #   flutter_note flutter create --platforms=macos .
@@ -102,47 +107,39 @@ temp(){
   run pwd
 }
 
-bake.cmd --cmd p --summary "<mono>  project set" --usage "Usage: ./$SCRIPT_FILE p <sub_cmd>"
+bake.cmd --cmd p --summary "<mono>  pkg set" --usage "Usage: ./$SCRIPT_FILE p <sub_cmd>"
 
-bake.cmd --cmd p.all --summary "<mono>  run cmd on all mono project" --usage "Usage: ./$SCRIPT_FILE all [any command]"
-all() {
-  for name in "${!projects[@]}"; do
-    local path;
-    path="${projects[name]}"
-    cd "path" && run "$@"
-  done
-}
+bake.cmd --cmd p.all --summary "<mono>  run cmd on all mono pkg" --usage "Usage: ./$SCRIPT_FILE all [any command]"
+all() { for name in "${!pkgs[@]}"; do cd "${pkgs[name]}" && run "$@"; done ; }
 
-app.install(){              cd "${projects[app]}" && run flutter pub get ; }
-app.clean(){                cd "${projects[app]}" && run flutter clean ; }
-app.dev(){                  cd "${projects[app]}" && run flutter run --no-pub --device-id macos ; }
-app.build(){                cd "${projects[app]}" && run flutter build macos --release --tree-shake-icons "$@";  }
-app.preview(){              cd "${projects[app]}" && run open "${projects[app]}/build/macos/Build/Products/Release/younpc.app" ; }
-
+app.run(){      cd "${pkgs[app]}" && run "$@" ; }
+app.install(){  app.run flutter pub get ; }
+app.clean(){    app.run flutter clean ; }
+app.dev(){      app.run flutter run --no-pub --device-id macos ; }
+app.build(){    app.run flutter build macos --release --tree-shake-icons "$@";  }
+app.preview(){  app.run open "${pkgs[app]}/build/macos/Build/Products/Release/younpc.app" ; }
 
 # app_devtools暂时搁置，目前没啥用，发现只能搞一个web页面以iframe的模式挂在devtools下，无法调用操作系统api
-app_devtools.install(){ cd "${projects[app_devtools]}" && run flutter pub get ; }
-app_devtools.dev(){     cd "${projects[app_devtools]}" && run flutter run -d Chrome --dart-define=use_simulated_environment=true ; }
-app_devtools.build(){   cd "${projects[app_devtools]}" && dart run devtools_extensions build_and_copy --source=. --dest="${projects[app_devtools]}/extension/devtools" ; }
 
-kous(){        p.run kous "$@" ; }
-kous.clean(){  echo "nothing clean" ; }
-kous.install(){    p.kous go mod tidy    ; }
+app_devtools.run(){     cd "${pkgs[app_devtools]}" && run "$@" ; }
+app_devtools.install(){ cd "${pkgs[app_devtools]}" && run flutter pub get ; }
+app_devtools.dev(){     cd "${pkgs[app_devtools]}" && run flutter run -d Chrome --dart-define=use_simulated_environment=true ; }
+app_devtools.build(){   cd "${pkgs[app_devtools]}" && dart run devtools_extensions build_and_copy --source=. --dest="${pkgs[app_devtools]}/extension/devtools" ; }
+
+kous.run(){        cd "${pkgs[kous]}" && run "$@" ; }
+kous.clean(){      kous.run "nothing clean" ; }
+kous.install(){    kous.run go mod tidy    ; }
 
 install(){
-  _getBake
-  for project in "${!projects[@]}"; do
-    func="p.$project.install"
-    # 命令存在就执行
-    if declare -F "$func" | grep "$func" &>/dev/null  2>&1; then $func ; fi
+  _install_bake
+  for pkg in "${!pkgs[@]}"; do
+    if _exist_func "$pkg.install" ; then "$pkg.install" ; fi
   done
 }
 
 clean(){
-  for project in "${!projects[@]}"; do
-    func="p.$project.clean"
-    # 命令存在就执行
-    if declare -F "$func" | grep "$func" &>/dev/null  2>&1; then $func ; fi
+  for pkg in "${!pkgs[@]}"; do
+    if _exist_func "$pkg.clean" ; then "$pkg.clean" ; fi
   done
 }
 
@@ -150,3 +147,4 @@ clean(){
 # app entry script & _root cmd
 ####################################################
 bake.go "$@"
+
