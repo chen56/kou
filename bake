@@ -82,10 +82,10 @@ run() {
 
 
 ## if function not exist return 1;
-# Usage: _exist_func <function>
-# Example: _exist_func app.build
+# Usage: __func_exists <function>
+# Example: __func_exists app.build
 #         => return 0
-_exist_func(){
+__func_exists(){
   local func="$1"
   if ! ( declare -F "$func" | grep "$func" &>/dev/null  2>&1; ) then
     return 1;
@@ -126,13 +126,13 @@ install(){
   _install_bake
   run git lfs install
   for pkg in "${!pkgs[@]}"; do
-    if _exist_func "$pkg.install" ; then "$pkg.install" ; fi
+    if __func_exists "$pkg.install" ; then "$pkg.install" ; fi
   done
 }
 
 clean(){
   for pkg in "${!pkgs[@]}"; do
-    if _exist_func "$pkg.clean" ; then "$pkg.clean" ; fi
+    if __func_exists "$pkg.clean" ; then "$pkg.clean" ; fi
   done
 }
 
