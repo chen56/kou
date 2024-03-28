@@ -3,7 +3,7 @@
 # On Mac OS, readlink -f doesn't work, so use._real_path get the real path of the file
 _real_path() (
   cd "$(dirname "$1")"
-  file="$PWD/$(basename "$1")"
+  declare file="$PWD/$(basename "$1")"
   while [[ -L "$file" ]]; do
     file="$(readlink "$file")"
     cd -P "$(dirname "$file")"
@@ -11,13 +11,13 @@ _real_path() (
   done
   echo "$file"
 )
-SCRIPT_PATH="$(_real_path "${BASH_SOURCE[0]}")"
+SCRIPT_PATH="$(realpath_mac "${BASH_SOURCE[0]}")"
 SCRIPT_DIR="$(dirname "$SCRIPT_PATH")"
 SCRIPT_FILE="$(basename "$SCRIPT_PATH")"
 
 _install_bake(){
-  echo "download bake.bash from: https://github.com/chen56/note/raw/main/bake.bash > $SCRIPT_DIR/bake.bash ";
-  mkdir "$SCRIPT_DIR/vendor"
+  mkdir -p "$SCRIPT_DIR/vendor"
+  echo "$SCRIPT_PATH -> _install_bake ▶︎【curl -o $SCRIPT_DIR/bake.bash https://github.com/chen56/note/raw/main/bake.bash】"
   curl -L -o  "$SCRIPT_DIR/vendor/bake.bash" https://github.com/chen56/note/raw/main/bake.bash ;
 }
 if ! [[ -f "$SCRIPT_DIR/vendor/bake.bash" ]]; then
@@ -27,9 +27,7 @@ fi
 # include common script
 source "$SCRIPT_DIR/vendor/bake.bash"
 
-declare -A pkgs
-
-pkgs=(
+declare -A pkgs=(
     ["app"]="$SCRIPT_DIR/app"
     ["kous"]="$SCRIPT_DIR/kous"
     ["app_devtools"]="$SCRIPT_DIR/app/packages/app_devtools"
@@ -41,10 +39,9 @@ pkgs=(
 ##########################################
 
 bake.cmd --cmd _root \
-             --usage "./$SCRIPT_FILE [cmd] [opts] [args...]" \
-             --summary "younpc build cli." \
-             --description "$( cat <<-EOF
-
+         --usage "./$SCRIPT_FILE [cmd] [opts] [args...]" \
+         --summary "younpc build cli." \
+         --description "$( cat <<-EOF
 
 younpc build tools.
 https://github.com/chen56/younpc
@@ -77,9 +74,6 @@ EOF
 # ------------------------------------
 run() {
   local caller_line=$(caller 0 | awk '{print $1}')
-  local pkg
-  pkg=$(basename "$PWD")
-  #  [[ "$PWD" == "$SCRIPT_DIR" ]] && pkg="_root"
   echo "$SCRIPT_PATH:$caller_line -> ${FUNCNAME[1]} ▶︎【$@】"
   "$@"
   return $?
@@ -95,11 +89,6 @@ _exist_func(){
   if ! ( declare -F "$func" | grep "$func" &>/dev/null  2>&1; ) then
     return 1;
   fi
-}
-
-#   flutter_note flutter create --platforms=macos .
-init() {
-  run git lfs install
 }
 
 # 临时函数实验用
@@ -132,6 +121,7 @@ kous.install(){    kous.run go mod tidy    ; }
 
 install(){
   _install_bake
+  run git lfs install
   for pkg in "${!pkgs[@]}"; do
     if _exist_func "$pkg.install" ; then "$pkg.install" ; fi
   done
