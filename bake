@@ -17,8 +17,8 @@ SCRIPT_FILE="$(basename "$SCRIPT_PATH")"
 
 _install_bake(){
   mkdir -p "$SCRIPT_DIR/vendor"
-  echo "$SCRIPT_PATH -> _install_bake ▶︎【curl -o $SCRIPT_DIR/bake.bash https://github.com/chen56/note/raw/main/bake.bash】"
-  curl -L -o  "$SCRIPT_DIR/vendor/bake.bash" https://github.com/chen56/note/raw/main/bake.bash ;
+  echo "$SCRIPT_PATH -> _install_bake ▶︎【curl -o $SCRIPT_DIR/bake.bash https://github.com/chen56/bake/raw/main/bake.bash】"
+  curl -L -o  "$SCRIPT_DIR/vendor/bake.bash" https://github.com/chen56/bake/raw/main/bake.bash ;
 }
 if ! [[ -f "$SCRIPT_DIR/vendor/bake.bash" ]]; then
   _install_bake
@@ -97,10 +97,10 @@ temp(){
   run pwd
 }
 
-bake.cmd --cmd p     --desc "<mono>  pkg set, Usage: ./$SCRIPT_FILE p <sub_cmd>"
-bake.cmd --cmd p.all --desc "<mono>  run cmd on all mono pkg, Usage: ./$SCRIPT_FILE all [any command]"
+bake.cmd --cmd all --desc "<mono>  run cmd on all mono pkg, Usage: ./$SCRIPT_FILE all [any command]"
 all() { for name in "${!pkgs[@]}"; do cd "${pkgs[name]}" && run "$@"; done ; }
 
+bake.cmd --cmd app     --desc "<mono> pkg, Usage: ./$SCRIPT_FILE app [cmd]"
 app.run(){      cd "${pkgs[app]}" && run "$@" ; }
 app.install(){  app.run flutter pub get ; }
 app.clean(){    app.run flutter clean ; }
@@ -110,11 +110,14 @@ app.preview(){  app.run open "${pkgs[app]}/build/macos/Build/Products/Release/yo
 
 # app_devtools暂时搁置，目前没啥用，发现只能搞一个web页面以iframe的模式挂在devtools下，无法调用操作系统api
 
+bake.cmd --cmd app_devtools     --desc "<mono> pkg, Usage: ./$SCRIPT_FILE app_devtools [cmd]"
 app_devtools.run(){     cd "${pkgs[app_devtools]}" && run "$@" ; }
 app_devtools.install(){ cd "${pkgs[app_devtools]}" && run flutter pub get ; }
 app_devtools.dev(){     cd "${pkgs[app_devtools]}" && run flutter run -d Chrome --dart-define=use_simulated_environment=true ; }
 app_devtools.build(){   cd "${pkgs[app_devtools]}" && dart run devtools_extensions build_and_copy --source=. --dest="${pkgs[app_devtools]}/extension/devtools" ; }
 
+
+bake.cmd --cmd kous     --desc "<mono> pkg, Usage: ./$SCRIPT_FILE app_devtools [kous]"
 kous.run(){        cd "${pkgs[kous]}" && run "$@" ; }
 kous.clean(){      kous.run "nothing clean" ; }
 kous.install(){    kous.run go mod tidy    ; }
