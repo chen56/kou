@@ -28,6 +28,7 @@ declare -A projects
 projects=(
     ["app"]="$SCRIPT_DIR/app"
     ["kous"]="$SCRIPT_DIR/kous"
+    ["app_devtools"]="$SCRIPT_DIR/app/packages/app_devtools"
 )
 
 ##########################################
@@ -85,6 +86,12 @@ run() {
   return $?
 }
 
+runp(){
+  declare project=$1
+  shift
+  cd "${projects[$project]}" && run "$@" ;
+}
+
 #   flutter_note flutter create --platforms=macos .
 init() {
   run git lfs install
@@ -111,6 +118,12 @@ app.clean(){                cd "${projects[app]}" && run flutter clean ; }
 app.dev(){                  cd "${projects[app]}" && run flutter run --no-pub --device-id macos ; }
 app.build(){                cd "${projects[app]}" && run flutter build macos --release --tree-shake-icons "$@";  }
 app.preview(){              cd "${projects[app]}" && run open "${projects[app]}/build/macos/Build/Products/Release/younpc.app" ; }
+
+
+# app_devtools暂时搁置，目前没啥用，发现只能搞一个web页面以iframe的模式挂在devtools下，无法调用操作系统api
+app_devtools.install(){ cd "${projects[app_devtools]}" && run flutter pub get ; }
+app_devtools.dev(){     cd "${projects[app_devtools]}" && run flutter run -d Chrome --dart-define=use_simulated_environment=true ; }
+app_devtools.build(){   cd "${projects[app_devtools]}" && dart run devtools_extensions build_and_copy --source=. --dest="${projects[app_devtools]}/extension/devtools" ; }
 
 kous(){        p.run kous "$@" ; }
 kous.clean(){  echo "nothing clean" ; }

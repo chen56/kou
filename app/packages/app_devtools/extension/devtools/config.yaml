@@ -1,0 +1,5 @@
+# https://github.com/flutter/devtools/blob/master/packages/devtools_extensions/extension_config_spec.md
+name: app_devtools
+version: 0.0.1
+issueTracker: chen56.github.com/younpc
+materialIconCodePoint: '0xe0b1' # https://github.com/flutter/flutter/blob/master/packages/flutter/lib/src/material/icons.dart
