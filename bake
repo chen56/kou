@@ -11,7 +11,7 @@ _real_path() (
   done
   echo "$file"
 )
-SCRIPT_PATH="$(realpath_mac "${BASH_SOURCE[0]}")"
+SCRIPT_PATH="$(_real_path "${BASH_SOURCE[0]}")"
 SCRIPT_DIR="$(dirname "$SCRIPT_PATH")"
 SCRIPT_FILE="$(basename "$SCRIPT_PATH")"
 
