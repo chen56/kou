@@ -15,6 +15,6 @@ Future<void> main() async {
       .childDirectory("workspace_0");
   runApp(App(
     title: "younpc cloud apps",
-    system: await You.load(dataDir: dataDir),
+    you: await You.load(dataDir: dataDir),
   ));
 }

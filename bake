@@ -34,12 +34,21 @@ projects=(
 ####################################################################################
 # app script
 ####################################################################################
-# print first, then _exec
-_exec() {
+
+# run一条命令，先print上下文信息，再执行
+# Usage: run <some cmd>
+# Example:
+# ------------------------------------
+# $ ./bake run pwd
+# /Users/x/git/younpc/bake:733 -> bake.go() ▶︎【pwd】
+# /Users/x/git/younpc
+# ------------------------------------
+run() {
+  local caller_line=$(caller 0 | awk '{print $1}')
   local project
   project=$(basename "$PWD")
   #  [[ "$PWD" == "$SCRIPT_DIR" ]] && project="_root"
-  echo "$project -> ${FUNCNAME[1]}() ▶︎【$*】"
+  echo "$SCRIPT_PATH:$caller_line -> ${FUNCNAME[1]} ▶︎【$@】"
   "$@"
   return $?
 }
@@ -86,37 +95,36 @@ init() {
   run git lfs install
 }
 
+# 临时函数实验用
+temp(){
+  run pwd
+}
+
 bake.cmd --cmd p --summary "<mono>  project set" --usage "Usage: ./$SCRIPT_FILE p <sub_cmd>"
-#p(){ echo "use './$SCRIPT_FILE p -h' see sub commands, there are all projects "; }
 
 bake.cmd --cmd p.all --summary "<mono>  run cmd on all mono project" --usage "Usage: ./$SCRIPT_FILE all [any command]"
-p.all() {
+all() {
   for name in "${!projects[@]}"; do
     local path;
     path="${projects[name]}"
-    cd "path" && _exec "$@"
+    cd "path" && run "$@"
   done
 }
 
-p.one(){
-  local project;
-  project="$1"
-  shift;
-  cd "${projects[$project]}" && _exec "$@"
-}
+app.install(){              cd "${projects[app]}" && run flutter pub get ; }
+app.clean(){                cd "${projects[app]}" && run flutter clean ; }
+app.dev(){                  cd "${projects[app]}" && run flutter run --no-pub --device-id macos ; }
+app.build(){                cd "${projects[app]}" && run flutter build macos --release --tree-shake-icons "$@";  }
+app.preview(){              cd "${projects[app]}" && run open "${projects[app]}/build/macos/Build/Products/Release/younpc.app" ; }
 
+kous(){        p.run kous "$@" ; }
+kous.clean(){  echo "nothing clean" ; }
+kous.install(){    p.kous go mod tidy    ; }
 
-p.app(){         p.one app "$@" ; }
-p.app.clean(){   p.app flutter clean ; }
-p.app.get(){     p.app flutter pub get ; }
-p.kous(){        p.one kous "$@" ; }
-p.kous.clean(){  echo "nothing clean" ; }
-p.kous.get(){    p.kous go mod tidy    ; }
-
-get(){
+install(){
   _getBake
   for project in "${!projects[@]}"; do
-    func="p.$project.get"
+    func="p.$project.install"
     # 命令存在就执行
     if declare -F "$func" | grep "$func" &>/dev/null  2>&1; then $func ; fi
   done
@@ -129,7 +137,6 @@ clean(){
     if declare -F "$func" | grep "$func" &>/dev/null  2>&1; then $func ; fi
   done
 }
-
 
 ####################################################
 # app entry script & _root cmd

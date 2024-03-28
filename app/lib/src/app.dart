@@ -12,10 +12,10 @@ import 'package:window_size/window_size.dart' as window_size;
 class App extends StatefulWidget {
   static final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>(debugLabel: "mainNavigator");
 
-  const App({super.key, required this.title, required this.system});
+  const App({super.key, required this.title, required this.you});
 
   final String title;
-  final You system;
+  final You you;
 
   @override
   State<App> createState() => _AppState();

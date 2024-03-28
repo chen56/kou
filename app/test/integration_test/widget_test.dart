@@ -17,7 +17,7 @@ void main() {
     await tester.pumpWidget(
       App(
         title: 'test',
-        system: await You.load(
+        you: await You.load(
           dataDir: fs.directory("~/temp").childDirectory("younpc_projects"),
         ),
       ),
