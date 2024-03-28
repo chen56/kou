@@ -38,7 +38,7 @@ declare -A pkgs=(
 # 应用的命令脚本
 ##########################################
 
-bake.cmd --cmd _root --desc "$( cat <<-EOF
+bake.cmd --cmd root --desc "$( cat <<-EOF
 
 younpc cli tools.
 

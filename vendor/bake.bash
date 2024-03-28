@@ -208,11 +208,11 @@ bake._log(){
 # Simulating object-oriented data structures with flat associative arrays
 # use ./bake _self to see internal var
 # save all other data
-declare -A _data
+declare -A _bake_data
 
 # only save all commands, we use it to build command tree
-# it is cache cmd tree from _data
-declare -A _cmdTree
+# it is cache cmd tree from _bake_data
+declare -A _bake_cmds
 
 TYPE_CMD="type:cmd"
 
@@ -278,9 +278,9 @@ bake._path_basename() {
 #   return <dataPath> children name
 bake._data_children() {
   local path="$1"
-  # ${!_data[@]}: get all array keys
+  # ${!_bake_data[@]}: get all array keys
   local key
-  for key in "${!_data[@]}"; do
+  for key in "${!_bake_data[@]}"; do
     # if start $path
     if [[ "$key" == "$path"* ]]; then
       # https://www.gnu.org/software/bash/manual/html_node/Shell-Parameter-Expansion.html
@@ -301,15 +301,15 @@ bake._cmd_childrenNameMaxLength() {
   printf "$maxLengthOfCmd"
 }
 bake._cmd_children() (
-  path="$1"
-  if [[ "$path" == _root ]]; then
+  local path="$1"
+  if [[ "$path" == root ]]; then
     path=""
   fi
 
-  # ${!_data[@]}: get all array keys
-  for key in "${!_cmdTree[@]}"; do
+  # ${!_bake_data[@]}: get all array keys
+  for key in "${!_bake_cmds[@]}"; do
     # if start $path
-    if [[ "$key" == "$path"* && "$key" != "$path" && "$key" != "_root" ]]; then
+    if [[ "$key" == "$path"* && "$key" != "$path" && "$key" != "root" ]]; then
       # https://www.gnu.org/software/bash/manual/html_node/Shell-Parameter-Expansion.html
       # remove prefix : key:a.b.c leftPathToBeCut:a => b.c
       child=$(bake._str_cutLeft "$key" "$path.")
@@ -321,15 +321,15 @@ bake._cmd_children() (
 )
 
 # Usage: bake._cmd_up_chain <cmd>
-# sample: bake._cmd_up_chain a.b      => "a.b", "a", "_root"
+# sample: bake._cmd_up_chain a.b      => "a.b", "a", "root"
 bake._cmd_up_chain() {
-  local path="${1:-_root}"
+  local path="${1:-root}"
   local up="$path"
   while [[ "$up" != "" ]]; do
     printf '%s\n' "$up"
     up=$(bake._path_dirname "$up" ".")
   done
-  if [[ "$path" != "_root" ]]; then printf "_root\n"; fi
+  if [[ "$path" != "root" ]]; then printf "root\n"; fi
 }
 # Usage: bake._cmd_down_chain <cmd>
 # reverse of bake._cmd_up_chain
@@ -346,8 +346,8 @@ bake._opt_cmd_chain_opts() {
   readarray -t upCmds <<<"$(bake._cmd_up_chain "$cmd")"
 
   local key
-  for key in "${!_data[@]}"; do
-    if [[ "${_data["$key"]}" != "type:opt" ]]; then continue; fi
+  for key in "${!_bake_data[@]}"; do
+    if [[ "${_bake_data["$key"]}" != "type:opt" ]]; then continue; fi
     local upCmd
     for upCmd in "${upCmds[@]}"; do
       if [[ "$key" == "$upCmd/opts/"* ]]; then
@@ -360,14 +360,14 @@ bake._opt_cmd_chain_opts() {
 # only use by bake.opt,
 # because "bake.opt" is meta function, use this func to add self
 bake._opt_internal_add() {
-  local cmd="$1" opt="$2" type="$3" required="$4" default="$5" abbr="$6" opt_help="$7"
-  _data["$cmd/opts/$opt"]="type:opt"
-  _data["$cmd/opts/$opt/name"]="$opt"
-  _data["$cmd/opts/$opt/type"]="$type"
-  _data["$cmd/opts/$opt/required"]="$required"
-  _data["$cmd/opts/$opt/abbr"]="$abbr"
-  _data["$cmd/opts/$opt/default"]="$default"
-  _data["$cmd/opts/$opt/opt_help"]="$opt_help"
+  local cmd="$1" opt="$2" type="$3" required="$4" default="$5" abbr="$6" desc="$7"
+  _bake_data["$cmd/opts/$opt"]="type:opt"
+  _bake_data["$cmd/opts/$opt/name"]="$opt"
+  _bake_data["$cmd/opts/$opt/type"]="$type"
+  _bake_data["$cmd/opts/$opt/required"]="$required"
+  _bake_data["$cmd/opts/$opt/abbr"]="$abbr"
+  _bake_data["$cmd/opts/$opt/default"]="$default"
+  _bake_data["$cmd/opts/$opt/desc"]="$desc"
 }
 
 
@@ -385,9 +385,9 @@ bake._cmd_register() {
     for upCmd in $(bake._cmd_up_chain "$functionName"); do
       # if upCmd is a function , set upCmd value to data path
       if compgen -A function | grep -q "^$upCmd$"; then
-        _cmdTree["$upCmd"]="$upCmd"
+        _bake_cmds["$upCmd"]="$upCmd"
       else
-        _cmdTree["$upCmd"]="PARENT_CMD_NOT_FUNC"
+        _bake_cmds["$upCmd"]="PARENT_CMD_NOT_FUNC"
       fi
     done
 
@@ -413,44 +413,27 @@ bake._show_cmd_help() {
 
   eval "$(bake.parse "${FUNCNAME[0]}" "$@")"
 
-  local usage
-  usage="${_data["${cmd}/usage"]}"
-  if [[ "$usage" != "" ]]; then
-    echo -e "\nUsage:  $usage "
+  echo
+
+  if [[ "$cmd" == "root" ]] ;then
+      echo "Running:【: $(bake._pwd)/$BAKE_FILE $@】"
   else
-    echo -e "\nUsage:  ./$BAKE_FILE $(bake._str_split "$cmd" "." | tr "\n" " ") [options] [args...]"
+      echo "Running:【$(bake._pwd)/$BAKE_FILE $cmd $@】"
   fi
 
   echo
-
-  if [[ "$cmd" == "_root" ]] ;then
-      echo "Currently running: $(bake._pwd)/$BAKE_FILE $@"
-  else
-      echo "Currently running: $(bake._pwd)/$BAKE_FILE $cmd $@"
-  fi
-
-  echo
-
-  if [[ "${_data["${cmd}/description"]}" != "" ]]; then
-    echo "Description: ${_data["${cmd}/description"]}"
-  elif [[ "${_data[${cmd} / summary]}" != "" ]]; then
-    echo "Description: ${_data["${cmd}/summary"]}"
-  else
-    echo "no description"
-  fi
-
+  echo "${_bake_data["${cmd}/desc"]}"
   echo
 
   echo "Available Options:"
   for optPath in $(bake._opt_cmd_chain_opts "$cmd"); do
-    local opt
-    opt=$(bake._path_basename "$optPath")
-    local name=${_data["$optPath/name"]}
-    local type=${_data["$optPath/type"]}
-    local required=${_data["$optPath/required"]}
-    local abbr=${_data["$optPath/abbr"]}
-    local default=${_data["$optPath/default"]}
-    local opt_help="${_data["$optPath/opt_help"]}"
+    local opt=$(bake._path_basename "$optPath")
+    local name=${_bake_data["$optPath/name"]}
+    local type=${_bake_data["$optPath/type"]}
+    local required=${_bake_data["$optPath/required"]}
+    local abbr=${_bake_data["$optPath/abbr"]}
+    local default=${_bake_data["$optPath/default"]}
+    local desc="${_bake_data["$optPath/desc"]}"
 
     local optArgDesc=""
     if [[ "$type" == "string" ]]; then
@@ -461,7 +444,7 @@ bake._show_cmd_help() {
       fi
     fi
 
-    printf " --%-20s -%-2s %-6s required:[%s] %b\n" "$name $optArgDesc" "$abbr" "$type" "$required" "$opt_help"
+    printf " --%-20s -%-2s %-6s required:[%s] %b\n" "$name $optArgDesc" "$abbr" "$type" "$required" "$desc"
   done
 
   echo "
@@ -480,20 +463,19 @@ Available Commands:"
     fi
 
     local subCmdPath="$cmd/$subCmd"
-    [[ "$cmd" == "_root" ]] && subCmdPath="$subCmd"
+    [[ "$cmd" == "root" ]] && subCmdPath="$subCmd"
 
-    local summary
-    summary="${_data["$subCmdPath/summary"]}"
-    summary="$(echo -e "$summary")" #  backslash escapes interpretation
+    local desc="${_bake_data["$subCmdPath/desc"]}"
+    desc="$(echo -e "$desc" | head -n 1 )" #  backslash escapes interpretation
 
-    printf "  %-$((maxLengthOfCmd))s  ${summary}\n" "${subCmd}"
+    printf "  %-$((maxLengthOfCmd))s  ${desc}\n" "${subCmd}"
   done
 }
 
 
 # 为cmd配置参数(public api)
 # Examples:
-#   bake.opt --cmd "build" --name "is_zip" --type bool --required --abbr z --default true --opt_help "is_zip, build项目时是否压缩"
+#   bake.opt --cmd "build" --name "is_zip" --type bool --required --abbr z --default true --desc "is_zip, build项目时是否压缩"
 # 每个参数可以配置如下信息：
 #   cmd: 参数作用的命令全名
 #   name: 参数长名，可以 ./bake build --is_zip 这样使用
@@ -501,7 +483,7 @@ Available Commands:"
 #   required: 是否必须提供，不提供将报错
 #   abbr: 参数短名, 可以 ./bake build -z 这样使用
 #   default: 缺省值, 未指定参数时，使用此值
-#   opt_help: 参数帮助，将显示在‘./bake build -h’命令帮助里
+#   desc: 参数帮助，将显示在‘./bake build -h’命令帮助里
 # 参考[bake.parse]
 bake._opt_internal_add bake.opt "cmd"      "string" "true"  ""      ""      "cmd name"
 bake._opt_internal_add bake.opt "name"     "string" "true"  ""      ""      "option name"
@@ -509,7 +491,7 @@ bake._opt_internal_add bake.opt "type"     "string" "true"  ""      ""      "opt
 bake._opt_internal_add bake.opt "required" "bool"   "false" "false" "false" "option required [true|false],default[false]"
 bake._opt_internal_add bake.opt "abbr"     "string" "false" ""      ""      "option abbr"
 bake._opt_internal_add bake.opt "default"  "string" "false" ""      ""      "option abbr"
-bake._opt_internal_add bake.opt "opt_help"  "string" "false" ""      ""      "option opt_help"
+bake._opt_internal_add bake.opt "desc"  "string" "false" ""      ""      "option desc"
 bake.opt() {
   eval "$(bake.parse ""${FUNCNAME[0]}"" "$@")"
   if [[ "$name" == "" ]]; then
@@ -521,7 +503,7 @@ bake.opt() {
   if [[ "$type" != "bool" && "$type" != "string" && "$type" != "list" ]]; then
     echo "error: option [--type] must in [bool|string|list] " >&2 && return 1
   fi
-  bake._opt_internal_add "$cmd" "$name" "$type" "${required:-false}" "$default" "$abbr" "$opt_help"
+  bake._opt_internal_add "$cmd" "$name" "$type" "${required:-false}" "$default" "$abbr" "$desc"
 }
 
 # bake.opt  (public api)
@@ -548,12 +530,12 @@ bake.opt() {
 #  ---------------------------------------------------------
 # eval后，就可以直接使用变量了, 在函数中declare，不带-g参数默认为local变量，不会影响全局环境。
 #
-# Usage: bake.parse <cmd:default _root> [arg1] [arg2] ...
+# Usage: bake.parse <cmd:default root> [arg1] [arg2] ...
 # 参考：[bake.opt]
 bake.parse() {
   local cmd="${1}"
   if [[ "$cmd" == "" ]]; then
-    bake._throw "bake.parse函数需提供cmd参数, Usage: bake.parse <cmd:default _root> [arg1] [arg2]" ;
+    bake._throw "bake.parse函数需提供cmd参数, Usage: bake.parse <cmd:default root> [arg1] [arg2]" ;
   fi
 
   shift; # shift cmd arg, left is options
@@ -561,13 +543,13 @@ bake.parse() {
   # key is -h --help ... candidate words ,
   # value is optPath
   declare -A allOptOnCmdChain
-  # collect opt from command chain : _root>pub>pub.get
+  # collect opt from command chain : root>pub>pub.get
   #   root option first , priority low -> priority high:
   for optPath in $(bake._opt_cmd_chain_opts "$cmd" | bake._str_revertLines); do
     local opt
     opt=$(bake._path_basename "$optPath")
     local abbr
-    abbr=${_data["$optPath/abbr"]}
+    abbr=${_bake_data["$optPath/abbr"]}
     allOptOnCmdChain["--$opt"]="${optPath}"
     if [[ "$abbr" != "" ]]; then allOptOnCmdChain["-$abbr"]="${optPath}"; fi
   done
@@ -591,7 +573,7 @@ bake.parse() {
     # reference to the current dynamic  opt variable
     declare -n currentOptValue=${optVars["$optPath"]}
 
-    local optType=${_data["$optPath/type"]}
+    local optType=${_bake_data["$optPath/type"]}
     case $optType in
     bool)
       currentOptValue=true
@@ -628,17 +610,13 @@ bake.parse() {
 # bake.cmd  (public api)
 # 注册一个命令的帮助信息
 # Examples:
-#   bake.cmd --cmd build --summary "build project" --usage "Usage: ./$SCRIPT_FILE build [options]"
-# 尤其是可以配置_root命令以定制根命令的帮助信息，比如:
-#   bake.cmd --cmd _root \
-#             --usage "./$SCRIPT_FILE [cmd] [opts] [args...]" \
-#             --summary "flutter-note cli." \
-#             --description ".... your root cmd help "
+#   bake.cmd --cmd build --desc "build project"
+# 尤其是可以配置root命令以定制根命令的帮助信息，比如:
+#   bake.cmd --cmd root \
+#             --desc "flutter-note cli."
 # 这样就可以用'./your_script -h' 查看根帮助了
-bake.opt --cmd "bake.cmd" --name "cmd"         --type string --opt_help "cmd, function name"
-bake.opt --cmd "bake.cmd" --name "usage"       --type string --opt_help "usage"
-bake.opt --cmd "bake.cmd" --name "summary"     --type string --opt_help "summary help, short, show on cmd list"
-bake.opt --cmd "bake.cmd" --name "description" --type string --opt_help "description, long help ,show on cmd help page"
+bake.opt --cmd "bake.cmd" --name "cmd"         --type string --desc "cmd, function name"
+bake.opt --cmd "bake.cmd" --name "desc"     --type string --desc "cmd desc, show in help"
 bake.cmd() {
   # 模版代码，放到每个需要使用option的函数中，然后就可以使用option了
   eval "$(bake.parse "${FUNCNAME[0]}" "$@")"
@@ -647,10 +625,7 @@ bake.cmd() {
     echo "error: bake.cmd [--cmd] required " >&2
     return 1
   fi
-  #  bake.parse "${FUNCNAME[0]}" "$@" >&2
-  _data["$cmd/usage"]="$usage"
-  _data["$cmd/summary"]="$summary"
-  _data["$cmd/description"]="$description"
+  _bake_data["$cmd/desc"]="$desc"
 }
 
 
@@ -675,16 +650,16 @@ cat <<- EOF
 EOF
   echo '# bake info & internal var'
   echo
-  echo '## _cmdTree'
+  echo '## _bake_cmds'
   echo
-  for key in "${!_cmdTree[@]}"; do
-    printf "cmd  - %-40s = %q\n" "$key" "${_cmdTree["$key"]:0:100}"
+  for key in "${!_bake_cmds[@]}"; do
+    printf "cmd  - %-40s = %q\n" "$key" "${_bake_cmds["$key"]:0:100}"
   done | sort
   echo
-  echo '## _data'
+  echo '## _bake_data'
   echo
-  for key in "${!_data[@]}"; do
-    printf "data - %-40s = %q\n" "$key" "${_data["$key"]:0:100}"
+  for key in "${!_bake_data[@]}"; do
+    printf "data - %-40s = %q\n" "$key" "${_bake_data["$key"]:0:100}"
   done | sort
   echo
   echo '## options'
@@ -709,12 +684,12 @@ bake.go() {
   local cmd nextCmd arg
   for arg in "$@"; do
     nextCmd="$([[ "$cmd" == "" ]] && echo "$arg" || echo "$cmd.$arg")"
-    if [[ "${_cmdTree["$nextCmd"]}" == "" ]]; then break; fi
+    if [[ "${_bake_cmds["$nextCmd"]}" == "" ]]; then break; fi
     cmd="$nextCmd"
     shift
   done
 
-  if [[ "$cmd" == "" ]]; then cmd="_root"; fi
+  if [[ "$cmd" == "" ]]; then cmd="root"; fi
   eval "$(bake.parse "$cmd" "$@")"
 
   if [[ "$help" == "true" ]]; then
@@ -724,7 +699,7 @@ bake.go() {
 
   #  if fileExist then show help
   if ! declare -F "$cmd" | grep "$cmd" &>/dev/null  2>&1; then
-    if [[ "${_cmdTree["$cmd"]}" == "PARENT_CMD_NOT_FUNC" ]]; then
+    if [[ "${_bake_cmds["$cmd"]}" == "PARENT_CMD_NOT_FUNC" ]]; then
       bake._show_cmd_help "$cmd" "$@"
       return 0
     fi
@@ -734,9 +709,9 @@ bake.go() {
   $cmd "$@"
 }
 
-# _root is special cmd(you can define it), bake add some common options to this cmd, you can add yourself options
-bake.opt --cmd _root --name "help"    --abbr h --type bool   --default false --opt_help "print help, show all commands"
-bake.opt --cmd _root --name "debug"   --abbr d --type bool   --default false  --opt_help "debug mode, print more internal info"
+# root is special cmd(you can define it), bake add some common options to this cmd, you can add yourself options
+bake.opt --cmd root --name "help"    --abbr h --type bool   --default false --desc "print help, show all commands"
+bake.opt --cmd root --name "debug"   --abbr d --type bool   --default false  --desc "debug mode, print more internal info"
 
 # BASH_SOURCE > 1 , means bake import from other script, it is lib mode
 # lib mod is not load app function, so we need to stop here
